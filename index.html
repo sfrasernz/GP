@@ -188,51 +188,87 @@
       border-color: rgba(140,170,255,.45);
     }
 
+    /* Scroll container */
     .tableScroll{
       overflow:auto;
       -webkit-overflow-scrolling: touch;
       max-height: 520px;
       border-radius:12px;
+      position: relative;
     }
     @media (max-width: 520px){
       .tableScroll{ max-height: 340px; }
     }
 
-    table{
-      width:100%;
-      border-collapse:collapse;
-      border-radius:12px;
-      overflow:hidden;
-      border:1px solid rgba(255,255,255,.10);
-      background:rgba(0,0,0,.08);
+    /* Shadow appears once you've scrolled (premium "floating header" feel) */
+    .tableScroll.scrolling thead th{
+      box-shadow: 0 6px 12px rgba(0,0,0,.25);
     }
 
-    /* Always-visible headers */
+    table{
+      width:100%;
+      border-collapse:separate;
+      border-spacing:0;
+      border-radius:12px;
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(0,0,0,.10);
+    }
+
+    /* Excel-style frozen header */
     thead th{
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      background: #111a38;
+      color: var(--muted);
       font-size:12px;
-      color:var(--muted);
+      font-weight:700;
       text-align:left;
-      padding:10px;
-      background:rgba(0,0,0,.32);
-      border-bottom:1px solid rgba(255,255,255,.08);
+      padding:12px 10px;
+      border-bottom:1px solid rgba(255,255,255,.15);
       white-space:nowrap;
-      position:sticky;
-      top:0;
-      z-index:3;
+    }
+
+    /* Vertical grid lines */
+    thead th:not(:last-child),
+    tbody td:not(:last-child){
+      border-right:1px solid rgba(255,255,255,.06);
     }
 
     tbody td{
       padding:10px;
       border-bottom:1px solid rgba(255,255,255,.06);
       font-variant-numeric: tabular-nums;
-      white-space:nowrap;
+      white-space: nowrap;
       font-weight:400;
+      transition: background .12s ease;
     }
+
     tbody tr:last-child td{ border-bottom:none; }
     .right{ text-align:right; }
 
-    tr.standard{ background: rgba(255, 215, 0, 0.18); }
-    tr.standard td:first-child{ border-left: 4px solid #ffd700; }
+    /* Subtle zebra striping */
+    tbody tr:nth-child(odd){
+      background: rgba(255,255,255,.02);
+    }
+
+    /* Highlighted row */
+    tr.standard{
+      background: rgba(255, 215, 0, 0.16) !important;
+    }
+    tr.standard td:first-child{
+      border-left: 4px solid #ffd700;
+    }
+
+    /* Pulse animation when the highlighted row changes (subtle) */
+    tr.standard.flash{
+      animation: flashRow 420ms ease-out;
+    }
+    @keyframes flashRow{
+      0%   { filter: brightness(1.25); }
+      100% { filter: brightness(1.0); }
+    }
 
     td.gpCol{ font-weight:800; }
 
@@ -450,6 +486,7 @@
 
   let rrpManuallyEdited = false;
   let selectedIncrement = null; // null = Auto
+  let lastStandardKey = null;   // for subtle pulse animation
 
   function setRrpMode(mode){
     const badge = $("rrpModeBadge");
@@ -536,6 +573,12 @@
     }
   }
 
+  function updateTableHeaderShadow(){
+    const sc = $("tableScroll");
+    if(sc.scrollTop > 0) sc.classList.add("scrolling");
+    else sc.classList.remove("scrolling");
+  }
+
   // center=true will center ONLY when no input is focused (fixes iOS keyboard dismissal)
   function updateCost({center=true} = {}){
     const cost = n($("cost").value);
@@ -557,18 +600,31 @@
 
     body.innerHTML = "";
 
+    let standardRowKey = null;
+
     for(const r of rrps){
       const t = calc(cost, r);
       const isStandard = Math.abs(r - rrp) < 0.005;
+      if(isStandard) standardRowKey = r.toFixed(2);
 
       body.insertAdjacentHTML("beforeend",`
-        <tr class="${isStandard ? "standard" : ""}">
+        <tr class="${isStandard ? "standard" : ""}" data-key="${r.toFixed(2)}">
           <td>${money(r)}</td>
           <td class="right">${money(t.gp$)}</td>
           <td class="right gpCol">${pct(t.gpPct)}</td>
           <td class="right">${pct(t.muPct)}</td>
         </tr>
       `);
+    }
+
+    // Subtle animation when standard row changes (non-annoying)
+    if(standardRowKey && standardRowKey !== lastStandardKey){
+      lastStandardKey = standardRowKey;
+      const row = body.querySelector(`tr.standard[data-key="${CSS.escape(standardRowKey)}"]`);
+      if(row){
+        row.classList.add("flash");
+        setTimeout(()=>row.classList.remove("flash"), 480);
+      }
     }
 
     // IMPORTANT: iOS can drop the keyboard if we programmatically scroll while an input is focused
@@ -600,9 +656,11 @@
     $("tab-margin").setAttribute("aria-selected", isCost ? "false" : "true");
   }
 
-  // Super-clean / invisible keyboard flow (safe on iOS)
-  // - DO NOT blur on window scroll (iOS micro-scroll while typing)
-  // - Blur when user touches the table area (intentional)
+  // ===== Premium table behaviour =====
+  $("tableScroll").addEventListener("scroll", updateTableHeaderShadow, {passive:true});
+
+  // ===== Super-clean / invisible keyboard flow (safe on iOS) =====
+  // Blur when user touches the table area (intentional)
   $("tableScroll").addEventListener("touchstart", blurActive, {passive:true});
 
   // Tapping outside inputs blurs
@@ -704,6 +762,9 @@
     $("validationNotice").textContent = "";
     $("rangeHint").textContent = "Range: adaptive";
 
+    $("tableScroll").classList.remove("scrolling");
+    lastStandardKey = null;
+
     showTab("cost");
     $("cost").focus();
   });
@@ -719,6 +780,7 @@
   showTab("cost");
   setRrpMode("auto");
   updateIncrementUI();
+  updateTableHeaderShadow();
   $("cost").focus();
 </script>
 </body>
