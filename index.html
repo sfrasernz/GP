@@ -593,13 +593,31 @@
   }
 
   // ===== Super-clean / invisible keyboard flow =====
-  function blurActive(){
-    const el = document.activeElement;
-    if(el && el.tagName === "INPUT") el.blur();
-  }
+  // ===== Super-clean / invisible keyboard flow =====
+function blurActive(){
+  const el = document.activeElement;
+  if(el && el.tagName === "INPUT") el.blur();
+}
+
+// Remove window scroll blur (causes iPhone keyboard to close while typing)
+// window.addEventListener("scroll", blurActive, {passive:true});
+
+// Only blur when the user touches the table area (intentional)
+$("tableScroll").addEventListener("touchstart", blurActive, {passive:true});
+
+// Tapping outside inputs blurs (still invisible)
+document.addEventListener("pointerdown", (e)=>{
+  const el = document.activeElement;
+  const isInputFocused = el && el.tagName === "INPUT";
+  if(!isInputFocused) return;
+
+  const tappedInput = e.target.closest("input");
+  if(!tappedInput) blurActive();
+}, {passive:true});
+
 
   // 1) If user scrolls anywhere, hide keyboard (mobile-friendly, invisible)
-  window.addEventListener("scroll", blurActive, {passive:true});
+  $("tableScroll").addEventListener("touchstart", blurActive, {passive:true});
   $("tableScroll").addEventListener("scroll", blurActive, {passive:true});
 
   // 2) Tapping outside inputs blurs (no visible "Done" button)
