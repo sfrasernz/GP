@@ -236,11 +236,7 @@
 
     td.gpCol{ font-weight:800; }
 
-    /* Tap row affordance (subtle) */
-    tbody tr{
-      cursor:pointer;
-      -webkit-tap-highlight-color: transparent;
-    }
+    
     tbody tr:hover{
       background: rgba(255,255,255,.06);
     }
@@ -674,24 +670,7 @@
     });
   });
 
-  // ===== Tap row = set RRP (switches to MANUAL) =====
-  $("gpTableBody").addEventListener("pointerdown", (e)=>{
-    const row = e.target.closest("tr");
-    if(!row) return;
-
-    const r = Number(row.dataset.rrp);
-    if(!Number.isFinite(r) || r <= 0) return;
-
-    e.preventDefault();
-    blurActive();
-
-    $("rrpInc").value = (Math.round(r * 100) / 100).toFixed(2);
-    rrpManuallyEdited = true;
-    setRrpMode("manual");
-
-    // Rebuild table and center highlight after setting
-    updateCost({center:true});
-  });
+  
 
   // Increment selector
   document.querySelectorAll(".chipBtn").forEach(btn=>{
