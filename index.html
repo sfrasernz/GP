@@ -188,6 +188,38 @@
     }
     .actionBtn:hover{ background:var(--chipOn); }
 
+    /* Table controls */
+    .tableHeaderRow{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:10px;
+      flex-wrap:wrap;
+    }
+    .seg{
+      display:flex;
+      gap:6px;
+      flex-wrap:wrap;
+    }
+    .segBtn{
+      padding:8px 10px;
+      border-radius:999px;
+      border:1px solid var(--chipBorder);
+      background:var(--chip);
+      color:var(--text);
+      font-size:12px;
+      font-weight:800;
+      cursor:pointer;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      user-select:none;
+    }
+    .segBtn[aria-pressed="true"]{
+      background:var(--chipOn);
+      border-color: rgba(140,170,255,.45);
+    }
+
     .tableScroll{
       overflow:auto;
       -webkit-overflow-scrolling: touch;
@@ -289,7 +321,7 @@
         </div>
 
         <div class="hint">
-          Enter moves Cost → RRP. Table shows ±$100 in $10 steps. Scroll inside the table on iPhone.
+          Enter moves Cost → RRP. Table shows ±$100 around the current RRP. Scroll inside the table on iPhone.
         </div>
       </section>
 
@@ -323,9 +355,21 @@
 
     <!-- TABLE -->
     <aside class="card" id="tableCard">
-      <h2 style="margin:0 0 10px;font-size:16px;">GP% sensitivity</h2>
+      <div class="tableHeaderRow">
+        <h2 style="margin:0;font-size:16px;">GP% sensitivity</h2>
 
-      <div class="tableScroll">
+        <div class="seg" aria-label="Increment selector">
+          <button class="segBtn" id="incAuto" type="button" data-inc="auto" aria-pressed="true">Auto</button>
+          <button class="segBtn" type="button" data-inc="1" aria-pressed="false">1</button>
+          <button class="segBtn" type="button" data-inc="5" aria-pressed="false">5</button>
+          <button class="segBtn" type="button" data-inc="10" aria-pressed="false">10</button>
+          <button class="segBtn" type="button" data-inc="25" aria-pressed="false">25</button>
+          <button class="segBtn" type="button" data-inc="50" aria-pressed="false">50</button>
+          <button class="segBtn" type="button" data-inc="100" aria-pressed="false">100</button>
+        </div>
+      </div>
+
+      <div class="tableScroll" id="tableScroll">
         <table>
           <thead>
             <tr>
@@ -339,7 +383,7 @@
         </table>
       </div>
 
-      <div class="hint">Yellow row = current RRP. Scroll table on small screens.</div>
+      <div class="hint" id="incHint">Increment: Auto (based on RRP)</div>
     </aside>
   </div>
 </div>
@@ -347,6 +391,8 @@
 <script>
   const GST = 1.15;
   const DEFAULT_MULTIPLIER = 1.84;
+
+  const RANGE = 100; // +/- range for sensitivity table
 
   const $ = id => document.getElementById(id);
   const n = v => Number.isFinite(+v) ? +v : NaN;
@@ -381,6 +427,43 @@
     };
   }
 
+  // Auto increment rules based on current RRP
+  function autoIncrement(rrp){
+    if(rrp < 100) return 5;
+    if(rrp <= 500) return 10;
+    return 50;
+  }
+
+  // Build list of RRPs in range with step, ensuring the exact current rrp is included
+  function buildRrpSeries(center, range, step){
+    const round2 = v => Math.round(v * 100) / 100;
+
+    const start = center - range;
+    const end   = center + range;
+
+    // align to the step grid for nicer numbers (using cents-safe math)
+    const startAligned = Math.ceil(start / step) * step;
+
+    const vals = [];
+    for(let v = startAligned; v <= end + 1e-9; v += step){
+      const r = round2(v);
+      if(r > 0) vals.push(r);
+    }
+
+    // Ensure center exists exactly (so the highlight row always appears)
+    const c = round2(center);
+    const hasCenter = vals.some(x => Math.abs(x - c) < 0.005);
+    if(!hasCenter && c > 0) vals.push(c);
+
+    // Unique + sort
+    vals.sort((a,b)=>a-b);
+    const uniq = [];
+    for(const v of vals){
+      if(uniq.length === 0 || Math.abs(v - uniq[uniq.length-1]) > 0.005) uniq.push(v);
+    }
+    return uniq;
+  }
+
   let rrpManuallyEdited = false;
 
   function setRrpMode(mode){
@@ -401,6 +484,35 @@
     setRrpMode("auto");
   }
 
+  // Increment selector state: null means Auto, otherwise a number
+  let selectedIncrement = null;
+
+  function updateIncrementUI(){
+    document.querySelectorAll(".segBtn").forEach(btn=>{
+      const val = btn.dataset.inc;
+      const pressed =
+        (val === "auto" && selectedIncrement === null) ||
+        (val !== "auto" && Number(val) === selectedIncrement);
+      btn.setAttribute("aria-pressed", pressed ? "true" : "false");
+    });
+
+    const label = (selectedIncrement === null) ? "Auto (based on RRP)" : String(selectedIncrement);
+    $("incHint").textContent = `Increment: ${label}`;
+  }
+
+  function centerHighlightRow(){
+    const sc = $("tableScroll");
+    const row = sc.querySelector("tr.standard");
+    if(!row) return;
+
+    // Wait a tick so layout is correct
+    requestAnimationFrame(() => {
+      const desired = row.offsetTop - (sc.clientHeight / 2) + (row.clientHeight / 2);
+      const max = sc.scrollHeight - sc.clientHeight;
+      sc.scrollTop = Math.max(0, Math.min(max, desired));
+    });
+  }
+
   function updateCost(){
     const cost = n($("cost").value);
     const rrp  = n($("rrpInc").value);
@@ -411,12 +523,12 @@
       return;
     }
 
+    const step = selectedIncrement ?? autoIncrement(rrp);
+    const rrps = buildRrpSeries(rrp, RANGE, step);
+
     body.innerHTML = "";
 
-    for(let d=-100; d<=100; d+=10){
-      const r = rrp + d;
-      if(r <= 0) continue;
-
+    for(const r of rrps){
       const t = calc(cost, r);
       const isStandard = Math.abs(r - rrp) < 0.005;
 
@@ -429,6 +541,9 @@
         </tr>
       `);
     }
+
+    // Keep the highlighted row centered within the scroll viewport
+    centerHighlightRow();
   }
 
   function updateMargin(){
@@ -469,7 +584,7 @@
     }
   });
 
-  // FIX #2: Cost changes should always update RRP in AUTO mode (no "blank" requirement)
+  // Cost changes: always update RRP in AUTO mode
   $("cost").addEventListener("input", () => {
     if(!rrpManuallyEdited){
       suggestRrpFromCost();
@@ -477,7 +592,7 @@
     updateCost();
   });
 
-  // FIX #1: Clearing RRP should keep it blank (no forced auto-refill)
+  // Clearing RRP should keep it blank (no forced auto-refill)
   $("rrpInc").addEventListener("input", () => {
     const val = $("rrpInc").value.trim();
 
@@ -488,16 +603,14 @@
       return;
     }
 
-    // allow it to stay blank
     rrpManuallyEdited = false;
     setRrpMode("auto");
     $("gpTableBody").innerHTML = "";
   });
 
   // Step buttons:
-  // - use pointerdown for snappy mobile response
-  // - prevent default so it doesn't steal focus
-  // - do NOT focus the input (prevents keyboard popup on iPhone)
+  // - pointerdown so it feels snappy on mobile
+  // - prevent default so it doesn't steal focus / pop keyboard
   document.querySelectorAll(".stepBtns button").forEach(btn=>{
     btn.addEventListener("pointerdown", (e)=>{
       e.preventDefault();
@@ -515,6 +628,16 @@
     });
   });
 
+  // Increment selector buttons
+  document.querySelectorAll(".segBtn").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const v = btn.dataset.inc;
+      selectedIncrement = (v === "auto") ? null : Number(v);
+      updateIncrementUI();
+      updateCost();
+    });
+  });
+
   // Reset
   $("resetBtn").addEventListener("click", () => {
     $("cost").value = "";
@@ -522,6 +645,9 @@
     $("gpTableBody").innerHTML = "";
     rrpManuallyEdited = false;
     setRrpMode("auto");
+
+    selectedIncrement = null;
+    updateIncrementUI();
 
     $("cost2").value = "";
     $("targetGp").value = "";
@@ -542,6 +668,7 @@
   // Init
   showTab("cost");
   setRrpMode("auto");
+  updateIncrementUI();
   $("cost").focus();
 </script>
 </body>
