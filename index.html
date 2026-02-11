@@ -159,7 +159,7 @@
     }
     .actionBtn:hover{ background:var(--chipOn); }
 
-    /* === Table section === */
+    /* Table */
     .tableHeaderRow{
       display:flex; align-items:center; justify-content:space-between;
       gap:10px; margin-bottom:10px; flex-wrap:wrap;
@@ -207,7 +207,7 @@
       background:rgba(0,0,0,.08);
     }
 
-    /* Always-visible column headers (sticky within scroll container) */
+    /* Always-visible headers */
     thead th{
       font-size:12px;
       color:var(--muted);
@@ -236,6 +236,15 @@
 
     td.gpCol{ font-weight:800; }
 
+    /* Tap row affordance (subtle) */
+    tbody tr{
+      cursor:pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    tbody tr:hover{
+      background: rgba(255,255,255,.06);
+    }
+
     .notice{
       display:none;
       margin-top:10px;
@@ -255,7 +264,7 @@
   </style>
 </head>
 <body>
-<div class="wrap">
+<div class="wrap" id="pageWrap">
   <div class="titleRow">
     <div class="brandIcon" aria-hidden="true">
       <img src="favicon.png" alt="">
@@ -268,7 +277,7 @@
 
   <div class="layout">
     <!-- MAIN -->
-    <div class="card">
+    <div class="card" id="mainCard">
       <div class="tabs">
         <button class="tabBtn" id="tab-cost" aria-selected="true" type="button">Cost → RRP</button>
         <button class="tabBtn" id="tab-margin" aria-selected="false" type="button">Margin → RRP</button>
@@ -307,7 +316,7 @@
         <div class="notice" id="validationNotice"></div>
 
         <div class="hint">
-          The GP% table range adapts to the current RRP automatically.
+          Tip: Tap a row in the GP% table to set that RRP instantly (switches to MANUAL).
         </div>
       </section>
 
@@ -410,7 +419,6 @@
     };
   }
 
-  // Adaptive range based on RRP
   function adaptiveRange(rrp){
     if(rrp < 200) return 50;
     if(rrp < 1000) return 100;
@@ -526,7 +534,7 @@
     }
   }
 
-  function updateCost(){
+  function updateCost({center=true} = {}){
     const cost = n($("cost").value);
     const rrp  = n($("rrpInc").value);
     const body = $("gpTableBody");
@@ -551,7 +559,7 @@
       const isStandard = Math.abs(r - rrp) < 0.005;
 
       body.insertAdjacentHTML("beforeend",`
-        <tr class="${isStandard ? "standard" : ""}">
+        <tr class="${isStandard ? "standard" : ""}" data-rrp="${r}">
           <td>${money(r)}</td>
           <td class="right">${money(t.gp$)}</td>
           <td class="right gpCol">${pct(t.gpPct)}</td>
@@ -560,7 +568,7 @@
       `);
     }
 
-    centerHighlightRow();
+    if(center) centerHighlightRow();
   }
 
   function updateMargin(){
@@ -588,25 +596,55 @@
     $("tab-margin").setAttribute("aria-selected", isCost ? "false" : "true");
   }
 
+  // ===== Super-clean / invisible keyboard flow =====
+  function blurActive(){
+    const el = document.activeElement;
+    if(el && el.tagName === "INPUT") el.blur();
+  }
+
+  // 1) If user scrolls anywhere, hide keyboard (mobile-friendly, invisible)
+  window.addEventListener("scroll", blurActive, {passive:true});
+  $("tableScroll").addEventListener("scroll", blurActive, {passive:true});
+
+  // 2) Tapping outside inputs blurs (no visible "Done" button)
+  document.addEventListener("pointerdown", (e)=>{
+    const el = document.activeElement;
+    const isInputFocused = el && el.tagName === "INPUT";
+    if(!isInputFocused) return;
+
+    // If the tap is NOT on an input (or its label), blur.
+    const tappedInput = e.target.closest("input");
+    if(!tappedInput) blurActive();
+  }, {passive:true});
+
+  // 3) Enter in cost -> suggest in AUTO, focus RRP, select it
   $("cost").addEventListener("keydown", e => {
     if(e.key === "Enter"){
       e.preventDefault();
-      if(!rrpManuallyEdited){
-        suggestRrpFromCost();
-      }
+      if(!rrpManuallyEdited) suggestRrpFromCost();
       updateCost();
       $("rrpInc").focus();
       $("rrpInc").select();
     }
   });
 
-  $("cost").addEventListener("input", () => {
-    if(!rrpManuallyEdited){
-      suggestRrpFromCost();
+  // 4) Enter in RRP -> blur and scroll table into view
+  $("rrpInc").addEventListener("keydown", e => {
+    if(e.key === "Enter"){
+      e.preventDefault();
+      blurActive();
+      // bring table into view on smaller screens
+      $("tableCard").scrollIntoView({behavior:"smooth", block:"start"});
     }
+  });
+
+  // Keep RRP updating in AUTO mode
+  $("cost").addEventListener("input", () => {
+    if(!rrpManuallyEdited) suggestRrpFromCost();
     updateCost();
   });
 
+  // RRP manual edit handling (clearing keeps it blank)
   $("rrpInc").addEventListener("input", () => {
     const val = $("rrpInc").value.trim();
     if(val !== ""){
@@ -625,6 +663,7 @@
   document.querySelectorAll(".stepBtns button").forEach(btn=>{
     btn.addEventListener("pointerdown", (e)=>{
       e.preventDefault();
+      blurActive(); // invisible + prevents keyboard staying up on iPhone
       const step = Number(btn.dataset.step);
       const rrp = n($("rrpInc").value) || 0;
       const next = rrp + step;
@@ -633,6 +672,25 @@
       setRrpMode("manual");
       updateCost();
     });
+  });
+
+  // ===== Tap row = set RRP (switches to MANUAL) =====
+  $("gpTableBody").addEventListener("pointerdown", (e)=>{
+    const row = e.target.closest("tr");
+    if(!row) return;
+
+    const r = Number(row.dataset.rrp);
+    if(!Number.isFinite(r) || r <= 0) return;
+
+    e.preventDefault();
+    blurActive();
+
+    $("rrpInc").value = (Math.round(r * 100) / 100).toFixed(2);
+    rrpManuallyEdited = true;
+    setRrpMode("manual");
+
+    // Rebuild table and center highlight after setting
+    updateCost({center:true});
   });
 
   // Increment selector
@@ -645,7 +703,10 @@
     });
   });
 
+  // Reset
   $("resetBtn").addEventListener("click", () => {
+    blurActive();
+
     $("cost").value = "";
     $("rrpInc").value = "";
     $("gpTableBody").innerHTML = "";
@@ -668,9 +729,11 @@
     $("cost").focus();
   });
 
+  // Tabs
   $("tab-cost").onclick = () => showTab("cost");
   $("tab-margin").onclick = () => showTab("margin");
 
+  // Margin tab events
   $("cost2").oninput = $("targetGp").oninput = updateMargin;
 
   // Init
