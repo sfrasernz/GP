@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Margin Calculator</title>
+  <style>
+    :root{
+      --bg:#0b1020; --card:#121a33; --muted:#a9b3d1; --text:#eaf0ff;
+      --line: rgba(255,255,255,.10);
+      --chip: rgba(255,255,255,.08);
+      --chipOn: rgba(140,170,255,.22);
+      --chipBorder: rgba(255,255,255,.14);
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      background: radial-gradient(1200px 800px at 20% 0%, #16214a, var(--bg));
+      color:var(--text);
+    }
+    .wrap{ max-width: 1100px; margin:auto; padding: 28px 16px 40px; }
+    h1{ margin:0 0 6px; font-size:28px; }
+    p.sub{ margin:0 0 18px; color:var(--muted); }
+
+    .layout{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+    @media (min-width: 980px){
+      .layout{ grid-template-columns: 1.15fr .85fr; }
+    }
+
+    .card{
+      background: rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:16px;
+      padding:16px;
+    }
+
+    /* Tabs */
+    .tabs{
+      display:flex;
+      gap:8px;
+      margin-bottom:12px;
+      padding-bottom:12px;
+      border-bottom:1px solid var(--line);
+    }
+    .tabBtn{
+      border:1px solid var(--chipBorder);
+      background:var(--chip);
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:999px;
+      font-weight:700;
+      font-size:13px;
+      cursor:pointer;
+    }
+    .tabBtn[aria-selected="true"]{
+      background:var(--chipOn);
+      border-color: rgba(140,170,255,.45);
+    }
+
+    .panel{ display:none; }
+    .panel.active{ display:block; }
+
+    .field{ display:flex; flex-direction:column; gap:6px; margin-bottom:10px; }
+    label{ font-size:12px; color:var(--muted); }
+
+    .rrpRow{
+      display:flex;
+      gap:8px;
+      align-items:flex-end;
+    }
+
+    input{
+      padding:12px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(0,0,0,.20);
+      color:var(--text);
+      font-size:15px;
+      outline:none;
+      width:100%;
+    }
+
+    .stepBtns{
+      display:flex;
+      gap:6px;
+    }
+    .stepBtns button{
+      padding:10px 10px;
+      border-radius:10px;
+      border:1px solid var(--chipBorder);
+      background:var(--chip);
+      color:var(--text);
+      font-size:13px;
+      font-weight:700;
+      cursor:pointer;
+      min-width:44px;
+    }
+    .stepBtns button:hover{
+      background:var(--chipOn);
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      border-radius:12px;
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(0,0,0,.08);
+    }
+    thead th{
+      font-size:12px;
+      color:var(--muted);
+      text-align:left;
+      padding:10px;
+      background:rgba(0,0,0,.24);
+      border-bottom:1px solid rgba(255,255,255,.08);
+      white-space: nowrap;
+    }
+    tbody td{
+      padding:10px;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      font-weight:400;
+    }
+    tbody tr:last-child td{ border-bottom:none; }
+    .right{ text-align:right; }
+
+    /* Highlight standard row */
+    tr.standard{
+      background: rgba(255, 215, 0, 0.18);
+    }
+    tr.standard td:first-child{
+      border-left: 4px solid #ffd700;
+    }
+
+    /* Bold GP% column */
+    td.gpCol{
+      font-weight:800;
+    }
+
+    .hint{ font-size:12px; color:var(--muted); margin-top:10px; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Margin Calculator</h1>
+  <p class="sub">Cost ex GST · RRP inc GST · GST fixed at 15%</p>
+
+  <div class="layout">
+    <!-- MAIN -->
+    <div class="card">
+      <div class="tabs">
+        <button class="tabBtn" id="tab-cost" aria-selected="true" type="button">Cost → RRP</button>
+        <button class="tabBtn" id="tab-margin" aria-selected="false" type="button">Margin → RRP</button>
+      </div>
+
+      <!-- Cost tab -->
+      <section class="panel active" id="panel-cost">
+        <div class="field">
+          <label>Cost (ex GST)</label>
+          <input id="cost" type="number" step="0.01">
+        </div>
+
+        <div class="field">
+          <label>RRP (inc GST)</label>
+          <div class="rrpRow">
+            <input id="rrpInc" type="number" step="0.01">
+            <div class="stepBtns">
+              <button data-step="-10">-10</button>
+              <button data-step="-1">-1</button>
+              <button data-step="1">+1</button>
+              <button data-step="10">+10</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="hint">
+          Enter moves Cost → RRP. Use buttons for quick price nudges.
+        </div>
+      </section>
+
+      <!-- Margin tab -->
+      <section class="panel" id="panel-margin">
+        <div class="field">
+          <label>Cost (ex GST)</label>
+          <input id="cost2" type="number" step="0.01">
+        </div>
+        <div class="field">
+          <label>Target GP%</label>
+          <input id="targetGp" type="number" step="0.01">
+        </div>
+
+        <table style="margin-top:10px;">
+          <thead>
+            <tr>
+              <th>Required RRP (inc)</th>
+              <th class="right">Required Sell (ex)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td id="reqRrp">$—</td>
+              <td class="right" id="reqSell">$—</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </div>
+
+    <!-- TABLE -->
+    <aside class="card" id="tableCard">
+      <h2 style="margin:0 0 10px;font-size:16px;">GP% sensitivity</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>RRP (inc)</th>
+            <th class="right">GP ($)</th>
+            <th class="right">GP%</th>
+            <th class="right">Markup%</th>
+          </tr>
+        </thead>
+        <tbody id="gpTableBody"></tbody>
+      </table>
+
+      <div class="hint">RRP ± $20 in $10 steps. Yellow row = current price.</div>
+    </aside>
+  </div>
+</div>
+
+<script>
+  const GST = 1.15;
+
+  const $ = id => document.getElementById(id);
+  const n = v => Number.isFinite(+v) ? +v : NaN;
+  const money = v => Number.isFinite(v) ? v.toLocaleString("en-NZ",{style:"currency",currency:"NZD"}) : "$—";
+  const pct = v => Number.isFinite(v) ? v.toFixed(2)+"%" : "—%";
+
+  function calc(costEx, rrpInc){
+    const sellEx = rrpInc / GST;
+    const gp$ = sellEx - costEx;
+    return {
+      gp$,
+      gpPct: sellEx ? (gp$ / sellEx) * 100 : NaN,
+      muPct: costEx ? (gp$ / costEx) * 100 : NaN
+    };
+  }
+
+  function updateCost(){
+    const cost = n($("cost").value);
+    const rrp  = n($("rrpInc").value);
+    const body = $("gpTableBody");
+
+    if(!Number.isFinite(cost) || !Number.isFinite(rrp) || rrp <= 0){
+      body.innerHTML = "";
+      return;
+    }
+
+    body.innerHTML = "";
+
+    for(let d=-20; d<=20; d+=10){
+      const r = rrp + d;
+      if(r <= 0) continue;
+
+      const t = calc(cost, r);
+      const isStandard = Math.abs(r - rrp) < 0.005;
+
+      body.insertAdjacentHTML("beforeend",`
+        <tr class="${isStandard ? "standard" : ""}">
+          <td>${money(r)}</td>
+          <td class="right">${money(t.gp$)}</td>
+          <td class="right gpCol">${pct(t.gpPct)}</td>
+          <td class="right">${pct(t.muPct)}</td>
+        </tr>
+      `);
+    }
+  }
+
+  function updateMargin(){
+    const cost = n($("cost2").value);
+    const gp   = n($("targetGp").value) / 100;
+
+    if(!Number.isFinite(cost) || !Number.isFinite(gp) || gp >= 1){
+      $("reqSell").textContent = "$—";
+      $("reqRrp").textContent = "$—";
+      return;
+    }
+
+    const sellEx = cost / (1 - gp);
+    $("reqSell").textContent = money(sellEx);
+    $("reqRrp").textContent = money(sellEx * GST);
+  }
+
+  function showTab(which){
+    const isCost = which === "cost";
+    $("panel-cost").classList.toggle("active", isCost);
+    $("panel-margin").classList.toggle("active", !isCost);
+    $("tableCard").style.display = isCost ? "block" : "none";
+  }
+
+  // Keyboard behaviour
+  $("cost").addEventListener("keydown", e => {
+    if(e.key === "Enter"){
+      e.preventDefault();
+      $("rrpInc").focus();
+    }
+  });
+
+  // Step buttons
+  document.querySelectorAll(".stepBtns button").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const step = Number(btn.dataset.step);
+      const rrp = n($("rrpInc").value) || 0;
+      $("rrpInc").value = (rrp + step).toFixed(2);
+      updateCost();
+      $("rrpInc").focus();
+    });
+  });
+
+  $("tab-cost").onclick = () => showTab("cost");
+  $("tab-margin").onclick = () => showTab("margin");
+
+  $("cost").oninput = $("rrpInc").oninput = updateCost;
+  $("cost2").oninput = $("targetGp").oninput = updateMargin;
+
+  // Init
+  showTab("cost");
+  $("cost").focus();
+</script>
+</body>
+</html>
