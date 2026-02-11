@@ -165,54 +165,6 @@
       gap:10px; margin-bottom:10px; flex-wrap:wrap;
     }
 
-    /* Sticky summary strip (inside scroll area) */
-    .summaryStrip{
-      position: sticky;
-      top: 0;
-      z-index: 3;
-      border:1px solid rgba(255,255,255,.10);
-      background: rgba(10,14,28,.92);
-      backdrop-filter: blur(8px);
-      border-radius: 12px;
-      padding: 10px;
-      margin-bottom: 10px;
-    }
-    .summaryGrid{
-      display:grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap:10px;
-    }
-    .summaryItem{
-      border:1px solid rgba(255,255,255,.10);
-      background: rgba(255,255,255,.05);
-      border-radius: 12px;
-      padding: 8px 10px;
-      min-width: 0;
-    }
-    .summaryLabel{
-      font-size:11px;
-      color: var(--muted);
-      margin-bottom: 2px;
-      white-space: nowrap;
-      overflow:hidden;
-      text-overflow: ellipsis;
-    }
-    .summaryValue{
-      font-size:14px;
-      font-weight: 900;
-      font-variant-numeric: tabular-nums;
-      white-space: nowrap;
-      overflow:hidden;
-      text-overflow: ellipsis;
-    }
-    .summaryValue.bad{ color: #ffb6b6; }
-    .summaryValue.warn{ color: #ffd7a3; }
-
-    @media (max-width: 520px){
-      .summaryGrid{ grid-template-columns: repeat(2, 1fr); }
-    }
-
-    /* One-hand mode controls bar (bottom on phones) */
     .chipBar{
       display:flex;
       gap:8px;
@@ -236,27 +188,6 @@
       border-color: rgba(140,170,255,.45);
     }
 
-    /* On iPhone: pin the increment bar to bottom for one-hand use */
-    @media (max-width: 520px){
-      .oneHandDock{
-        position: sticky;
-        bottom: 0;
-        z-index: 4;
-        margin-top: 10px;
-        padding-top: 10px;
-        background: rgba(10,14,28,.88);
-        backdrop-filter: blur(8px);
-        border-top: 1px solid rgba(255,255,255,.10);
-      }
-      .chipBar{
-        flex-wrap: nowrap;
-        overflow:auto;
-        -webkit-overflow-scrolling: touch;
-        padding-bottom: 6px;
-      }
-      .chipBtn{ flex: 0 0 auto; }
-    }
-
     .tableScroll{
       overflow:auto;
       -webkit-overflow-scrolling: touch;
@@ -275,18 +206,21 @@
       border:1px solid rgba(255,255,255,.10);
       background:rgba(0,0,0,.08);
     }
+
+    /* Always-visible column headers (sticky within scroll container) */
     thead th{
       font-size:12px;
       color:var(--muted);
       text-align:left;
       padding:10px;
-      background:rgba(0,0,0,.24);
+      background:rgba(0,0,0,.32);
       border-bottom:1px solid rgba(255,255,255,.08);
       white-space:nowrap;
       position:sticky;
-      top: 52px; /* below summary strip; adjusted in JS with CSS var would be fancier */
-      z-index:2;
+      top:0;
+      z-index:3;
     }
+
     tbody td{
       padding:10px;
       border-bottom:1px solid rgba(255,255,255,.06);
@@ -297,14 +231,11 @@
     tbody tr:last-child td{ border-bottom:none; }
     .right{ text-align:right; }
 
-    /* Highlight standard row */
     tr.standard{ background: rgba(255, 215, 0, 0.18); }
     tr.standard td:first-child{ border-left: 4px solid #ffd700; }
 
-    /* Bold GP% column */
     td.gpCol{ font-weight:800; }
 
-    /* Validation callouts */
     .notice{
       display:none;
       margin-top:10px;
@@ -376,7 +307,7 @@
         <div class="notice" id="validationNotice"></div>
 
         <div class="hint">
-          Tip: On iPhone, use the increment bar at the bottom of the GP% panel (one-hand).
+          The GP% table range adapts to the current RRP automatically.
         </div>
       </section>
 
@@ -412,32 +343,20 @@
     <aside class="card" id="tableCard">
       <div class="tableHeaderRow">
         <h2 style="margin:0;font-size:16px;">GP% sensitivity</h2>
-        <div style="font-size:12px;color:var(--muted);" id="rangeHint">Range: ±$100 (adaptive)</div>
+        <div style="font-size:12px;color:var(--muted);" id="rangeHint">Range: adaptive</div>
       </div>
 
-      <!-- Sticky summary strip lives ABOVE the scroll area -->
-      <div class="summaryStrip" id="summaryStrip">
-        <div class="summaryGrid">
-          <div class="summaryItem">
-            <div class="summaryLabel">Current RRP (inc)</div>
-            <div class="summaryValue" id="sumRrp">$—</div>
-          </div>
-          <div class="summaryItem">
-            <div class="summaryLabel">GP ($)</div>
-            <div class="summaryValue" id="sumGp">$—</div>
-          </div>
-          <div class="summaryItem">
-            <div class="summaryLabel">GP%</div>
-            <div class="summaryValue" id="sumGpPct">—%</div>
-          </div>
-          <div class="summaryItem">
-            <div class="summaryLabel">Markup%</div>
-            <div class="summaryValue" id="sumMuPct">—%</div>
-          </div>
-        </div>
+      <div class="chipBar" aria-label="Increment selector">
+        <button class="chipBtn" type="button" data-inc="auto" aria-pressed="true">Auto</button>
+        <button class="chipBtn" type="button" data-inc="1" aria-pressed="false">1</button>
+        <button class="chipBtn" type="button" data-inc="5" aria-pressed="false">5</button>
+        <button class="chipBtn" type="button" data-inc="10" aria-pressed="false">10</button>
+        <button class="chipBtn" type="button" data-inc="25" aria-pressed="false">25</button>
+        <button class="chipBtn" type="button" data-inc="50" aria-pressed="false">50</button>
+        <button class="chipBtn" type="button" data-inc="100" aria-pressed="false">100</button>
       </div>
 
-      <div class="tableScroll" id="tableScroll">
+      <div class="tableScroll" id="tableScroll" style="margin-top:10px;">
         <table>
           <thead>
             <tr>
@@ -449,19 +368,6 @@
           </thead>
           <tbody id="gpTableBody"></tbody>
         </table>
-      </div>
-
-      <!-- One-hand increment bar -->
-      <div class="oneHandDock">
-        <div class="chipBar" aria-label="Increment selector">
-          <button class="chipBtn" type="button" data-inc="auto" aria-pressed="true">Auto</button>
-          <button class="chipBtn" type="button" data-inc="1" aria-pressed="false">1</button>
-          <button class="chipBtn" type="button" data-inc="5" aria-pressed="false">5</button>
-          <button class="chipBtn" type="button" data-inc="10" aria-pressed="false">10</button>
-          <button class="chipBtn" type="button" data-inc="25" aria-pressed="false">25</button>
-          <button class="chipBtn" type="button" data-inc="50" aria-pressed="false">50</button>
-          <button class="chipBtn" type="button" data-inc="100" aria-pressed="false">100</button>
-        </div>
       </div>
 
       <div class="hint" id="incHint">Increment: Auto</div>
@@ -504,11 +410,7 @@
     };
   }
 
-  // Adaptive range based on RRP (simple + practical)
-  // < $200  -> ±$50
-  // $200–$999 -> ±$100
-  // $1000–$2499 -> ±$250
-  // >= $2500 -> ±$500
+  // Adaptive range based on RRP
   function adaptiveRange(rrp){
     if(rrp < 200) return 50;
     if(rrp < 1000) return 100;
@@ -561,7 +463,7 @@
     const cost = n($("cost").value);
     if(!Number.isFinite(cost) || cost <= 0) return;
 
-    const raw = cost * DEFAULT_MULTIPLIER; // (if you want GST here: * GST)
+    const raw = cost * DEFAULT_MULTIPLIER;
     const suggested = roundToPsych99(raw);
     $("rrpInc").value = suggested.toFixed(2);
     setRrpMode("auto");
@@ -592,68 +494,25 @@
     });
   }
 
-  function setSummary(cost, rrp){
-    const sumRrp = $("sumRrp");
-    const sumGp = $("sumGp");
-    const sumGpPct = $("sumGpPct");
-    const sumMuPct = $("sumMuPct");
-
-    if(!Number.isFinite(cost) || !Number.isFinite(rrp) || rrp <= 0){
-      sumRrp.textContent = "$—";
-      sumGp.textContent = "$—";
-      sumGpPct.textContent = "—%";
-      sumMuPct.textContent = "—%";
-      sumGp.classList.remove("bad","warn");
-      sumGpPct.classList.remove("bad","warn");
-      sumMuPct.classList.remove("bad","warn");
-      return;
-    }
-
-    const t = calc(cost, rrp);
-    sumRrp.textContent = money(rrp);
-    sumGp.textContent = money(t.gp$);
-    sumGpPct.textContent = pct(t.gpPct);
-    sumMuPct.textContent = pct(t.muPct);
-
-    // Light severity colouring (only on the value, not whole row)
-    const isBad = t.gp$ < 0;
-    const isWarn = !isBad && t.gpPct < 10; // low margin warning threshold
-
-    for(const el of [sumGp, sumGpPct, sumMuPct]){
-      el.classList.remove("bad","warn");
-      if(isBad) el.classList.add("bad");
-      else if(isWarn) el.classList.add("warn");
-    }
-  }
-
   function validateInputs(cost, rrp){
     const notice = $("validationNotice");
     notice.className = "notice";
     notice.textContent = "";
 
-    if(!Number.isFinite(cost) && !Number.isFinite(rrp)){
-      return;
-    }
+    if(!Number.isFinite(cost) && !Number.isFinite(rrp)) return;
 
     if(Number.isFinite(cost) && cost < 0){
       notice.classList.add("show","bad");
       notice.textContent = "Cost can’t be negative.";
       return;
     }
-
     if(Number.isFinite(rrp) && rrp < 0){
       notice.classList.add("show","bad");
       notice.textContent = "RRP can’t be negative.";
       return;
     }
-
     if(Number.isFinite(cost) && Number.isFinite(rrp) && rrp > 0){
       const t = calc(cost, rrp);
-      if(t.sellEx <= 0){
-        notice.classList.add("show","bad");
-        notice.textContent = "Sell (ex GST) would be zero or negative at this RRP.";
-        return;
-      }
       if(t.gp$ < 0){
         notice.classList.add("show","bad");
         notice.textContent = "Negative GP at this price (sell ex GST is below cost).";
@@ -672,8 +531,6 @@
     const rrp  = n($("rrpInc").value);
     const body = $("gpTableBody");
 
-    // summary + validation
-    setSummary(cost, rrp);
     validateInputs(cost, rrp);
 
     if(!Number.isFinite(cost) || !Number.isFinite(rrp) || rrp <= 0){
@@ -731,7 +588,6 @@
     $("tab-margin").setAttribute("aria-selected", isCost ? "false" : "true");
   }
 
-  // Enter in cost -> suggest in AUTO mode, then focus RRP
   $("cost").addEventListener("keydown", e => {
     if(e.key === "Enter"){
       e.preventDefault();
@@ -744,7 +600,6 @@
     }
   });
 
-  // Cost changes: keep RRP updating in AUTO mode
   $("cost").addEventListener("input", () => {
     if(!rrpManuallyEdited){
       suggestRrpFromCost();
@@ -752,25 +607,21 @@
     updateCost();
   });
 
-  // RRP manual edit handling (clearing keeps it blank)
   $("rrpInc").addEventListener("input", () => {
     const val = $("rrpInc").value.trim();
-
     if(val !== ""){
       rrpManuallyEdited = true;
       setRrpMode("manual");
       updateCost();
       return;
     }
-
     rrpManuallyEdited = false;
     setRrpMode("auto");
     $("gpTableBody").innerHTML = "";
-    setSummary(n($("cost").value), NaN);
     validateInputs(n($("cost").value), NaN);
   });
 
-  // Step buttons (snappy + no keyboard pop on iPhone)
+  // Step buttons (snappy + no keyboard pop)
   document.querySelectorAll(".stepBtns button").forEach(btn=>{
     btn.addEventListener("pointerdown", (e)=>{
       e.preventDefault();
@@ -784,7 +635,7 @@
     });
   });
 
-  // Increment selector (one-hand bar)
+  // Increment selector
   document.querySelectorAll(".chipBtn").forEach(btn=>{
     btn.addEventListener("click", ()=>{
       const v = btn.dataset.inc;
@@ -794,7 +645,6 @@
     });
   });
 
-  // Reset
   $("resetBtn").addEventListener("click", () => {
     $("cost").value = "";
     $("rrpInc").value = "";
@@ -812,26 +662,21 @@
 
     $("validationNotice").className = "notice";
     $("validationNotice").textContent = "";
-    $("rangeHint").textContent = "Range: ±$100 (adaptive)";
-
-    setSummary(NaN, NaN);
+    $("rangeHint").textContent = "Range: adaptive";
 
     showTab("cost");
     $("cost").focus();
   });
 
-  // Tabs
   $("tab-cost").onclick = () => showTab("cost");
   $("tab-margin").onclick = () => showTab("margin");
 
-  // Margin tab events
   $("cost2").oninput = $("targetGp").oninput = updateMargin;
 
   // Init
   showTab("cost");
   setRrpMode("auto");
   updateIncrementUI();
-  setSummary(NaN, NaN);
   $("cost").focus();
 </script>
 </body>
