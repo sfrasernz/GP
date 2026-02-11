@@ -19,6 +19,9 @@
       --warnBorder: rgba(255, 173, 51, .45);
       --badBg: rgba(255, 87, 87, .18);
       --badBorder: rgba(255, 87, 87, .45);
+
+      --dangerBg: rgba(255, 87, 87, .14);
+      --dangerBorder: rgba(255, 87, 87, .40);
     }
 
     *{ box-sizing:border-box; }
@@ -156,8 +159,20 @@
       cursor:pointer;
       -webkit-tap-highlight-color: transparent;
       touch-action: manipulation;
+      transition: transform .06s ease, background .12s ease, border-color .12s ease;
     }
     .actionBtn:hover{ background:var(--chipOn); }
+    .actionBtn:active{ transform: translateY(1px); }
+
+    /* Subtle red reset */
+    .actionBtn.danger{
+      background: var(--dangerBg);
+      border-color: var(--dangerBorder);
+    }
+    .actionBtn.danger:hover{
+      background: rgba(255, 87, 87, .20);
+      border-color: rgba(255, 87, 87, .55);
+    }
 
     /* Table */
     .tableHeaderRow{
@@ -253,12 +268,27 @@
       background: rgba(255,255,255,.02);
     }
 
-    /* Highlighted row */
+    /* Yellow standard row */
     tr.standard{
       background: rgba(255, 215, 0, 0.16) !important;
     }
     tr.standard td:first-child{
       border-left: 4px solid #ffd700;
+    }
+
+    /* Subtle "selected" row on tap/click */
+    tr.selected{
+      background: rgba(140,170,255,.09) !important;
+    }
+    tr.selected td:first-child{
+      border-left: 4px solid rgba(140,170,255,.85);
+    }
+    /* If the selected row is also the standard row, keep the yellow but show blue edge */
+    tr.standard.selected{
+      background: rgba(255, 215, 0, 0.16) !important;
+    }
+    tr.standard.selected td:first-child{
+      border-left: 4px solid rgba(140,170,255,.90);
     }
 
     /* Pulse animation when the highlighted row changes (subtle) */
@@ -288,6 +318,32 @@
     .notice.bad{ border-color: var(--badBorder); background: var(--badBg); }
 
     .hint{ font-size:12px; color:var(--muted); margin-top:10px; line-height:1.35; }
+
+    /* iPhone: bigger inputs/buttons for easier entry */
+    @media (max-width: 520px){
+      input{
+        font-size:18px;
+        padding:16px 14px;
+        border-radius:14px;
+      }
+      .stepBtns button{
+        padding:14px 12px;
+        min-width:56px;
+        font-size:14px;
+        border-radius:12px;
+      }
+      .chipBtn{
+        padding:10px 12px;
+        font-size:13px;
+      }
+      .actionBtn{
+        padding:12px 14px;
+        font-size:14px;
+      }
+      label{
+        font-size:13px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -337,13 +393,13 @@
         </div>
 
         <div class="actionsRow">
-          <button type="button" class="actionBtn" id="resetBtn">Reset</button>
+          <button type="button" class="actionBtn danger" id="resetBtn">Reset</button>
         </div>
 
         <div class="notice" id="validationNotice"></div>
 
         <div class="hint">
-          iOS tip: keyboard will stay open while typing (no auto-scroll while focused).
+          iOS tip: keyboard will stay open while typing (no auto-scroll while focused). Tap a table row to mark it.
         </div>
       </section>
 
@@ -446,7 +502,6 @@
     };
   }
 
-  // Adaptive range based on RRP
   function adaptiveRange(rrp){
     if(rrp < 200) return 50;
     if(rrp < 1000) return 100;
@@ -486,7 +541,8 @@
 
   let rrpManuallyEdited = false;
   let selectedIncrement = null; // null = Auto
-  let lastStandardKey = null;   // for subtle pulse animation
+  let lastStandardKey = null;
+  let selectedRowKey = null;
 
   function setRrpMode(mode){
     const badge = $("rrpModeBadge");
@@ -579,7 +635,13 @@
     else sc.classList.remove("scrolling");
   }
 
-  // center=true will center ONLY when no input is focused (fixes iOS keyboard dismissal)
+  function applySelectedRowClass(){
+    document.querySelectorAll("#gpTableBody tr").forEach(tr => tr.classList.remove("selected"));
+    if(!selectedRowKey) return;
+    const tr = document.querySelector(`#gpTableBody tr[data-key="${CSS.escape(selectedRowKey)}"]`);
+    if(tr) tr.classList.add("selected");
+  }
+
   function updateCost({center=true} = {}){
     const cost = n($("cost").value);
     const rrp  = n($("rrpInc").value);
@@ -589,6 +651,7 @@
 
     if(!Number.isFinite(cost) || !Number.isFinite(rrp) || rrp <= 0){
       body.innerHTML = "";
+      selectedRowKey = null;
       return;
     }
 
@@ -605,10 +668,11 @@
     for(const r of rrps){
       const t = calc(cost, r);
       const isStandard = Math.abs(r - rrp) < 0.005;
-      if(isStandard) standardRowKey = r.toFixed(2);
+      const key = r.toFixed(2);
+      if(isStandard) standardRowKey = key;
 
       body.insertAdjacentHTML("beforeend",`
-        <tr class="${isStandard ? "standard" : ""}" data-key="${r.toFixed(2)}">
+        <tr class="${isStandard ? "standard" : ""}" data-key="${key}">
           <td>${money(r)}</td>
           <td class="right">${money(t.gp$)}</td>
           <td class="right gpCol">${pct(t.gpPct)}</td>
@@ -617,7 +681,9 @@
       `);
     }
 
-    // Subtle animation when standard row changes (non-annoying)
+    // keep selection after re-render (if still present)
+    applySelectedRowClass();
+
     if(standardRowKey && standardRowKey !== lastStandardKey){
       lastStandardKey = standardRowKey;
       const row = body.querySelector(`tr.standard[data-key="${CSS.escape(standardRowKey)}"]`);
@@ -627,7 +693,6 @@
       }
     }
 
-    // IMPORTANT: iOS can drop the keyboard if we programmatically scroll while an input is focused
     if(center && !isTypingInInput()) centerHighlightRow();
   }
 
@@ -656,14 +721,9 @@
     $("tab-margin").setAttribute("aria-selected", isCost ? "false" : "true");
   }
 
-  // ===== Premium table behaviour =====
   $("tableScroll").addEventListener("scroll", updateTableHeaderShadow, {passive:true});
-
-  // ===== Super-clean / invisible keyboard flow (safe on iOS) =====
-  // Blur when user touches the table area (intentional)
   $("tableScroll").addEventListener("touchstart", blurActive, {passive:true});
 
-  // Tapping outside inputs blurs
   document.addEventListener("pointerdown", (e)=>{
     const el = document.activeElement;
     const isInputFocused = el && el.tagName === "INPUT";
@@ -673,7 +733,17 @@
     if(!tappedInput) blurActive();
   }, {passive:true});
 
-  // Enter in cost -> suggest in AUTO, focus RRP
+  // Tap/click a row to subtly highlight it (toggle)
+  $("gpTableBody").addEventListener("pointerdown", (e)=>{
+    const row = e.target.closest("tr");
+    if(!row) return;
+    const key = row.dataset.key;
+    if(!key) return;
+
+    selectedRowKey = (selectedRowKey === key) ? null : key;
+    applySelectedRowClass();
+  });
+
   $("cost").addEventListener("keydown", e => {
     if(e.key === "Enter"){
       e.preventDefault();
@@ -684,13 +754,11 @@
     }
   });
 
-  // Cost typing: NO centering (prevents iOS keyboard dismissal)
   $("cost").addEventListener("input", () => {
     if(!rrpManuallyEdited) suggestRrpFromCost();
     updateCost({center:false});
   });
 
-  // RRP typing: NO centering (prevents iOS keyboard dismissal)
   $("rrpInc").addEventListener("input", () => {
     const val = $("rrpInc").value.trim();
     if(val !== ""){
@@ -702,10 +770,10 @@
     rrpManuallyEdited = false;
     setRrpMode("auto");
     $("gpTableBody").innerHTML = "";
+    selectedRowKey = null;
     validateInputs(n($("cost").value), NaN);
   });
 
-  // Enter in RRP -> blur and scroll table into view
   $("rrpInc").addEventListener("keydown", e => {
     if(e.key === "Enter"){
       e.preventDefault();
@@ -715,7 +783,6 @@
     }
   });
 
-  // Step buttons (snappy + no keyboard pop)
   document.querySelectorAll(".stepBtns button").forEach(btn=>{
     btn.addEventListener("pointerdown", (e)=>{
       e.preventDefault();
@@ -730,7 +797,6 @@
     });
   });
 
-  // Increment selector
   document.querySelectorAll(".chipBtn").forEach(btn=>{
     btn.addEventListener("click", ()=>{
       const v = btn.dataset.inc;
@@ -740,7 +806,6 @@
     });
   });
 
-  // Reset
   $("resetBtn").addEventListener("click", () => {
     blurActive();
 
@@ -764,19 +829,17 @@
 
     $("tableScroll").classList.remove("scrolling");
     lastStandardKey = null;
+    selectedRowKey = null;
 
     showTab("cost");
     $("cost").focus();
   });
 
-  // Tabs
   $("tab-cost").onclick = () => showTab("cost");
   $("tab-margin").onclick = () => showTab("margin");
 
-  // Margin tab events
   $("cost2").oninput = $("targetGp").oninput = updateMargin;
 
-  // Init
   showTab("cost");
   setRrpMode("auto");
   updateIncrementUI();
