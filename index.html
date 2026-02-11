@@ -97,6 +97,13 @@
     .field{ display:flex; flex-direction:column; gap:6px; margin-bottom:10px; }
     label{ font-size:12px; color:var(--muted); }
 
+    .rrpMetaRow{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+    }
+
     .rrpRow{
       display:flex;
       gap:8px;
@@ -113,6 +120,36 @@
       outline:none;
       width:100%;
     }
+
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:800;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      user-select:none;
+      white-space:nowrap;
+    }
+    .badgeDot{
+      width:8px; height:8px; border-radius:999px;
+      background: rgba(255,255,255,.55);
+    }
+    .badge.auto{
+      border-color: rgba(140,170,255,.45);
+      background: rgba(140,170,255,.16);
+    }
+    .badge.auto .badgeDot{ background: rgba(140,170,255,.95); }
+
+    .badge.manual{
+      border-color: rgba(255,215,0,.45);
+      background: rgba(255,215,0,.14);
+    }
+    .badge.manual .badgeDot{ background: rgba(255,215,0,.95); }
 
     .stepBtns{
       display:flex;
@@ -214,9 +251,15 @@
         </div>
 
         <div class="field">
-          <label>RRP (inc GST)</label>
+          <div class="rrpMetaRow">
+            <label>RRP (inc GST)</label>
+            <span class="badge auto" id="rrpModeBadge" title="Auto-updates from Cost until you manually edit RRP">
+              <span class="badgeDot" aria-hidden="true"></span>
+              <span id="rrpModeText">AUTO</span>
+            </span>
+          </div>
           <div class="rrpRow">
-            <input id="rrpInc" type="number" step="0.01" inputmode="decimal" placeholder="auto-suggests after cost">
+            <input id="rrpInc" type="number" step="0.01" inputmode="decimal" placeholder="auto-suggests from cost">
             <div class="stepBtns" aria-label="RRP step buttons">
               <button type="button" data-step="-10">-10</button>
               <button type="button" data-step="-1">-1</button>
@@ -231,7 +274,7 @@
         </div>
 
         <div class="hint">
-          Enter moves Cost → RRP. RRP step buttons are great for quick nudges. Yellow row = current RRP. GP% column is bold.
+          Enter moves Cost → RRP. If you type/change RRP, it switches to MANUAL and stops auto-updating.
         </div>
       </section>
 
@@ -286,21 +329,19 @@
 
 <script>
   const GST = 1.15;
-  const DEFAULT_MULTIPLIER = 1.84;
+  const DEFAULT_MULTIPLIER = 1.84; // your chosen factor from cost -> RRP (inc GST)
 
   const $ = id => document.getElementById(id);
   const n = v => Number.isFinite(+v) ? +v : NaN;
   const money = v => Number.isFinite(v) ? v.toLocaleString("en-NZ",{style:"currency",currency:"NZD"}) : "$—";
   const pct = v => Number.isFinite(v) ? v.toFixed(2)+"%" : "—%";
 
-  // Psychological pricing: choose the nearest price that ends in .99
-  // e.g. candidates around v: floor(v)+0.99 and floor(v)+1.99, pick the closest
+  // Psychological pricing: nearest .99 (e.g. 199.99, 200.99 etc)
   function roundToPsych99(v){
     if(!Number.isFinite(v)) return v;
     const base = Math.floor(v);
     const a = base + 0.99;
     const b = base + 1.99;
-    // handle tiny values cleanly
     const candidates = [a, b].filter(x => x >= 0.99);
     let best = candidates[0];
     let bestDist = Math.abs(v - best);
@@ -325,20 +366,29 @@
 
   let rrpManuallyEdited = false;
 
+  function setRrpMode(mode){
+    const badge = $("rrpModeBadge");
+    const text = $("rrpModeText");
+    badge.classList.remove("auto","manual");
+    badge.classList.add(mode);
+    text.textContent = mode.toUpperCase();
+  }
+
   function suggestRrpFromCost(){
-  const cost = n($("cost").value);
-  if(!Number.isFinite(cost) || cost <= 0) return;
+    const cost = n($("cost").value);
+    if(!Number.isFinite(cost) || cost <= 0) return;
 
-  // If user has manually edited RRP, do not override
-  if(rrpManuallyEdited) return;
+    // Respect manual override
+    if(rrpManuallyEdited){
+      setRrpMode("manual");
+      return;
+    }
 
-  const raw = cost * DEFAULT_MULTIPLIER;   // or * GST if you want
-  const suggested = roundToPsych99(raw);
-
-  $("rrpInc").value = suggested.toFixed(2);
-  updateCost();
-}
-
+    const raw = cost * DEFAULT_MULTIPLIER; // if you want to include GST here: * GST
+    const suggested = roundToPsych99(raw);
+    $("rrpInc").value = suggested.toFixed(2);
+    setRrpMode("auto");
+  }
 
   function updateCost(){
     const cost = n($("cost").value);
@@ -395,36 +445,49 @@
     $("tab-margin").setAttribute("aria-selected", isCost ? "false" : "true");
   }
 
-  // Keyboard: Enter in cost -> suggest RRP (if blank) then focus RRP
+  // Keyboard: Enter in cost -> auto-suggest (if AUTO) then focus RRP
   $("cost").addEventListener("keydown", e => {
     if(e.key === "Enter"){
       e.preventDefault();
-      suggestRrpIfBlank();
+      suggestRrpFromCost();
+      updateCost();
       $("rrpInc").focus();
       $("rrpInc").select();
     }
   });
 
-  // When cost changes, suggest RRP if blank (and user hasn't edited)
-  $("cost").addEventListener("blur", suggestRrpIfBlank);
-
-  // Track manual editing of RRP so we don't keep overriding suggestions
-  $("rrpInc").addEventListener("input", () => {
-    if($("rrpInc").value.trim() !== "") rrpManuallyEdited = true;
+  // Cost changes: update suggested RRP in AUTO mode
+  $("cost").addEventListener("input", () => {
+    suggestRrpFromCost();
     updateCost();
   });
 
-  // Cost input updates table as well (if RRP present)
-  $("cost").addEventListener("input", updateCost);
+  // Manual edit of RRP switches to MANUAL.
+  // If RRP is cleared, revert to AUTO and re-suggest from cost.
+  $("rrpInc").addEventListener("input", () => {
+    if($("rrpInc").value.trim() !== ""){
+      rrpManuallyEdited = true;
+      setRrpMode("manual");
+    }else{
+      rrpManuallyEdited = false;
+      setRrpMode("auto");
+      suggestRrpFromCost();
+    }
+    updateCost();
+  });
 
-  // Step buttons
+  // Step buttons count as MANUAL
   document.querySelectorAll(".stepBtns button").forEach(btn=>{
     btn.addEventListener("click", ()=>{
       const step = Number(btn.dataset.step);
       const rrp = n($("rrpInc").value) || 0;
       const next = rrp + step;
+
       $("rrpInc").value = (Math.round(next * 100) / 100).toFixed(2);
+
       rrpManuallyEdited = true;
+      setRrpMode("manual");
+
       updateCost();
       $("rrpInc").focus();
     });
@@ -436,6 +499,14 @@
     $("rrpInc").value = "";
     $("gpTableBody").innerHTML = "";
     rrpManuallyEdited = false;
+    setRrpMode("auto");
+
+    // Also clear margin tab outputs/inputs (nice & clean)
+    $("cost2").value = "";
+    $("targetGp").value = "";
+    $("reqSell").textContent = "$—";
+    $("reqRrp").textContent = "$—";
+
     showTab("cost");
     $("cost").focus();
   });
@@ -449,10 +520,8 @@
 
   // Init
   showTab("cost");
+  setRrpMode("auto");
   $("cost").focus();
 </script>
 </body>
 </html>
-
-
-
