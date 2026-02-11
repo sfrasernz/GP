@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Margin Calculator</title>
 
-  <!-- Keep favicon in browser tab -->
   <link rel="icon" type="image/png" href="favicon.png">
 
   <style>
@@ -95,19 +94,18 @@
     .rrpMetaRow{ display:flex; justify-content:space-between; align-items:center; gap:10px; }
     .rrpRow{ display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap; }
 
-    /* Input with clear (×) */
     .inputWrap{
       position: relative;
       width:100%;
     }
     input{
       padding:12px;
-      padding-right:44px; /* room for clear button */
+      padding-right:44px;
       border-radius:12px;
       border:1px solid var(--inputLine);
       background:rgba(0,0,0,.20);
       color:var(--text);
-      font-size:16px; /* iOS: prevent zoom */
+      font-size:16px;
       outline:none;
       width:100%;
       transition: border-color .12s ease, box-shadow .12s ease;
@@ -141,7 +139,6 @@
     .clearBtn:hover{ background: var(--clearBgHover); }
     .inputWrap.hasValue .clearBtn{ display:flex; }
 
-    /* Validation tinting */
     .inputWrap.warn input{ border-color: var(--warnLine); }
     .inputWrap.bad  input{ border-color: var(--badLine); }
 
@@ -196,7 +193,6 @@
     .actionBtn:active{ transform: translateY(1px); }
     .actionBtn:hover{ background:var(--chipOn); }
 
-    /* Subtle red reset */
     .actionBtn.danger{
       background: var(--dangerBg);
       border-color: var(--dangerBorder);
@@ -206,7 +202,6 @@
       border-color: rgba(255, 87, 87, .55);
     }
 
-    /* Table */
     .tableHeaderRow{
       display:flex; align-items:center; justify-content:space-between;
       gap:10px; margin-bottom:10px; flex-wrap:wrap;
@@ -231,7 +226,6 @@
       border-color: rgba(140,170,255,.45);
     }
 
-    /* Scroll container */
     .tableScroll{
       overflow:auto;
       -webkit-overflow-scrolling: touch;
@@ -379,12 +373,10 @@
         <button class="tabBtn" id="tab-margin" aria-selected="false" type="button">Margin → RRP</button>
       </div>
 
-      <!-- Cost tab -->
       <section class="panel active" id="panel-cost">
         <div class="field">
           <label>Cost (ex GST)</label>
           <div class="inputWrap" id="wrap-cost">
-            <!-- text + inputmode allows commas while still showing numeric keypad -->
             <input id="cost" type="text" inputmode="decimal" placeholder="e.g. 1,200.00" autocomplete="off">
             <button class="clearBtn" type="button" aria-label="Clear cost" data-clear="cost">×</button>
           </div>
@@ -419,11 +411,10 @@
         <div class="notice" id="validationNotice" aria-live="polite"></div>
 
         <div class="hint">
-          Commas are OK (e.g. 12,000). Desktop shortcuts in RRP: ↑/↓ nudges by increment, Shift+↑/↓ nudges by 10×.
+          Commas are OK (e.g. 12,000). Desktop shortcuts in RRP: ↑/↓ nudges by increment, Shift+↑/↓ nudges by 10×. Double-click a table row to set RRP.
         </div>
       </section>
 
-      <!-- Margin tab -->
       <section class="panel" id="panel-margin">
         <div class="field">
           <label>Cost (ex GST)</label>
@@ -435,7 +426,6 @@
         <div class="field">
           <label>Target GP%</label>
           <div class="inputWrap" id="wrap-targetGp">
-            <!-- keep this plain (no commas needed) -->
             <input id="targetGp" type="text" inputmode="decimal" autocomplete="off">
             <button class="clearBtn" type="button" aria-label="Clear target GP%" data-clear="targetGp">×</button>
           </div>
@@ -458,7 +448,6 @@
       </section>
     </div>
 
-    <!-- TABLE -->
     <aside class="card" id="tableCard">
       <div class="tableHeaderRow">
         <h2 style="margin:0;font-size:16px;">GP% sensitivity</h2>
@@ -500,13 +489,11 @@
 
   const $ = id => document.getElementById(id);
 
-  // Parse numbers allowing commas (display-only) and one decimal point.
   function parseNum(str){
     if(str == null) return NaN;
     const s = String(str).trim();
     if(!s) return NaN;
     const cleaned = s.replace(/,/g, "").replace(/[^\d.\-]/g, "");
-    // guard: just "-" or "." etc
     if(cleaned === "-" || cleaned === "." || cleaned === "-.") return NaN;
     const v = Number(cleaned);
     return Number.isFinite(v) ? v : NaN;
@@ -515,26 +502,18 @@
   const money = v => Number.isFinite(v) ? v.toLocaleString("en-NZ",{style:"currency",currency:"NZD"}) : "$—";
   const pct = v => Number.isFinite(v) ? v.toFixed(2)+"%" : "—%";
 
-  // Add thousands separators while typing (doesn't force 2dp; blur will).
   function formatWithCommasWhileTyping(inputEl, {maxDecimals=2} = {}){
     const raw = inputEl.value;
     if(raw === "") return;
 
-    // remember caret position
     const start = inputEl.selectionStart ?? raw.length;
-
-    // count "significant" chars to left (digits + dot) in the raw string
     const leftRaw = raw.slice(0, start);
     const leftCount = (leftRaw.match(/[\d.]/g) || []).length;
 
-    // clean input: keep digits, one dot, one leading minus
     let s = raw.replace(/,/g, "");
     s = s.replace(/[^\d.\-]/g, "");
-
-    // handle minus: only leading
     s = s.replace(/(?!^)-/g, "");
 
-    // keep only first dot
     const dotIdx = s.indexOf(".");
     if(dotIdx !== -1){
       const before = s.slice(0, dotIdx + 1);
@@ -542,35 +521,30 @@
       s = before + after;
     }
 
-    // clamp decimals (typing-friendly)
     if(dotIdx !== -1){
       const parts = s.split(".");
       parts[1] = (parts[1] || "").slice(0, maxDecimals);
       s = parts[0] + "." + parts[1];
     }
 
-    // split sign/int/dec
     const neg = s.startsWith("-");
     if(neg) s = s.slice(1);
 
     const parts = s.split(".");
-    let intPart = parts[0].replace(/^0+(?=\d)/, ""); // remove leading zeros (keep one if needed)
+    let intPart = parts[0].replace(/^0+(?=\d)/, "");
     const decPart = parts.length > 1 ? parts[1] : null;
 
-    // insert commas into integer
     intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
     let out = (neg ? "-" : "") + (intPart || "0");
     if(decPart !== null){
       out += "." + decPart;
     } else if(raw.endsWith(".")) {
-      // preserve trailing dot while typing
       out += ".";
     }
 
     inputEl.value = out;
 
-    // restore caret based on leftCount (digits+dot)
     let seen = 0;
     let newPos = out.length;
     for(let i=0;i<out.length;i++){
@@ -578,6 +552,13 @@
       if(seen >= leftCount){ newPos = i + 1; break; }
     }
     inputEl.setSelectionRange(newPos, newPos);
+  }
+
+  function setInputMoneyString(inputId, value){
+    const el = $(inputId);
+    if(!el) return;
+    if(!Number.isFinite(value)){ el.value = ""; return; }
+    el.value = value.toLocaleString("en-NZ", {minimumFractionDigits:2, maximumFractionDigits:2});
   }
 
   function roundToPsych99(v){
@@ -644,7 +625,7 @@
   }
 
   let rrpManuallyEdited = false;
-  let selectedIncrement = null; // null = Auto
+  let selectedIncrement = null;
   let lastStandardKey = null;
   let selectedRowKey = null;
 
@@ -703,6 +684,15 @@
     }
   }
 
+  function syncClearButtons(){
+    document.querySelectorAll(".inputWrap").forEach(w=>{
+      const inp = w.querySelector("input");
+      if(!inp) return;
+      if((inp.value ?? "").trim() !== "") w.classList.add("hasValue");
+      else w.classList.remove("hasValue");
+    });
+  }
+
   function updateTableHeaderShadow(){
     const sc = $("tableScroll");
     if(sc.scrollTop > 0) sc.classList.add("scrolling");
@@ -748,49 +738,9 @@
     return el && el.tagName === "INPUT";
   }
 
-  function syncClearButtons(){
-    document.querySelectorAll(".inputWrap").forEach(w=>{
-      const inp = w.querySelector("input");
-      if(!inp) return;
-      if((inp.value ?? "").trim() !== "") w.classList.add("hasValue");
-      else w.classList.remove("hasValue");
-    });
-  }
-
-  function setInputMoneyString(inputId, value){
-    const el = $(inputId);
-    if(!el) return;
-    if(!Number.isFinite(value)){
-      el.value = "";
-      return;
-    }
-    // keep commas and 2dp
-    el.value = value.toLocaleString("en-NZ", {minimumFractionDigits:2, maximumFractionDigits:2});
-  }
-
-  // Format to 2dp on blur (and keep commas), not while typing
-  function format2dpOnBlur(inputId){
-    const el = $(inputId);
-    if(!el) return;
-    el.addEventListener("blur", ()=>{
-      const v = parseNum(el.value);
-      if(!Number.isFinite(v)) return;
-      // targetGp is percent: keep 2dp, no commas
-      if(inputId === "targetGp"){
-        el.value = (Math.round(v * 100) / 100).toFixed(2);
-      } else {
-        setInputMoneyString(inputId, Math.round(v * 100) / 100);
-      }
-      syncClearButtons();
-      if(inputId === "cost" || inputId === "rrpInc") updateCost({center:true});
-      if(inputId === "cost2" || inputId === "targetGp") updateMargin();
-    });
-  }
-
   function suggestRrpFromCost(){
     const cost = parseNum($("cost").value);
     if(!Number.isFinite(cost) || cost <= 0) return;
-
     const raw = cost * DEFAULT_MULTIPLIER;
     const suggested = roundToPsych99(raw);
     setInputMoneyString("rrpInc", suggested);
@@ -818,7 +768,6 @@
     const rrps = buildRrpSeries(rrp, range, step);
 
     body.innerHTML = "";
-
     let standardRowKey = null;
 
     for(const r of rrps){
@@ -889,7 +838,7 @@
     if(!tappedInput) blurActive();
   }, {passive:true});
 
-  // Tap row to highlight
+  // Single click/tap: subtle highlight
   $("gpTableBody").addEventListener("pointerdown", (e)=>{
     const row = e.target.closest("tr");
     if(!row) return;
@@ -897,6 +846,27 @@
     if(!key) return;
     selectedRowKey = (selectedRowKey === key) ? null : key;
     applySelectedRowClass();
+  });
+
+  // Double click: set RRP to that row's RRP
+  // (desktop mouse: dblclick; mobile: won't fire, and we intentionally don't implement double-tap)
+  $("gpTableBody").addEventListener("dblclick", (e)=>{
+    const row = e.target.closest("tr");
+    if(!row) return;
+    const key = row.dataset.key;
+    if(!key) return;
+
+    const val = Number(key);
+    if(!Number.isFinite(val)) return;
+
+    setInputMoneyString("rrpInc", val);
+    rrpManuallyEdited = true;
+    setRrpMode("manual");
+    syncClearButtons();
+    updateCost({center:true});
+
+    $("rrpInc").focus();
+    $("rrpInc").select();
   });
 
   // Clear buttons
@@ -933,7 +903,7 @@
     });
   });
 
-  // Thousands separators while typing (cost/rrp/cost2 only)
+  // Thousands separators while typing (money-like inputs)
   ["cost","rrpInc","cost2"].forEach(id=>{
     const el = $(id);
     el.addEventListener("input", ()=>{
@@ -942,13 +912,13 @@
     });
   });
 
-  // Cost -> (auto) suggest RRP while typing; don't scroll-center (iOS friendly)
+  // Cost input drives AUTO rrp + table (no centering while typing)
   $("cost").addEventListener("input", () => {
     if(!rrpManuallyEdited) suggestRrpFromCost();
     updateCost({center:false});
   });
 
-  // RRP typing
+  // RRP typing: manual mode
   $("rrpInc").addEventListener("input", () => {
     const val = $("rrpInc").value.trim();
     if(val !== ""){
@@ -984,11 +954,9 @@
     }
   });
 
-  // Keyboard shortcuts (desktop): ArrowUp/ArrowDown nudges RRP by increment; Shift = 10×
+  // Keyboard shortcuts (desktop): ArrowUp/ArrowDown nudges RRP
   $("rrpInc").addEventListener("keydown", (e)=>{
     if(e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
-
-    // Only act when in RRP field
     e.preventDefault();
 
     const current = parseNum($("rrpInc").value) || 0;
@@ -1004,7 +972,7 @@
     updateCost({center:true});
   });
 
-  // Step buttons (no keyboard pop)
+  // Step buttons
   document.querySelectorAll(".stepBtns button").forEach(btn=>{
     btn.addEventListener("pointerdown", (e)=>{
       e.preventDefault();
@@ -1031,12 +999,26 @@
     });
   });
 
-  // Margin tab events
+  // Margin tab
   $("cost2").addEventListener("input", updateMargin);
   $("targetGp").addEventListener("input", ()=>{ syncClearButtons(); updateMargin(); });
 
-  // Format on blur
-  ["cost","rrpInc","cost2","targetGp"].forEach(format2dpOnBlur);
+  // Format to 2dp on blur
+  ["cost","rrpInc","cost2","targetGp"].forEach(id=>{
+    const el = $(id);
+    el.addEventListener("blur", ()=>{
+      const v = parseNum(el.value);
+      if(!Number.isFinite(v)) return;
+      if(id === "targetGp"){
+        el.value = (Math.round(v * 100) / 100).toFixed(2);
+      } else {
+        setInputMoneyString(id, Math.round(v * 100) / 100);
+      }
+      syncClearButtons();
+      if(id === "cost" || id === "rrpInc") updateCost({center:true});
+      if(id === "cost2" || id === "targetGp") updateMargin();
+    });
+  });
 
   // Reset
   $("resetBtn").addEventListener("click", () => {
