@@ -325,23 +325,20 @@
 
   let rrpManuallyEdited = false;
 
-  function suggestRrpIfBlank(){
-    const cost = n($("cost").value);
-    const rrpNow = $("rrpInc").value.trim();
+  function suggestRrpFromCost(){
+  const cost = n($("cost").value);
+  if(!Number.isFinite(cost) || cost <= 0) return;
 
-    // Only suggest if:
-    // - cost is valid
-    // - RRP field is empty
-    // - user hasn't started manually editing RRP
-    if(!Number.isFinite(cost) || cost <= 0) return;
-    if(rrpNow !== "") return;
-    if(rrpManuallyEdited) return;
+  // If user has manually edited RRP, do not override
+  if(rrpManuallyEdited) return;
 
-    const raw = cost * DEFAULT_MULTIPLIER;
-    const suggested = roundToPsych99(raw);
-    $("rrpInc").value = suggested.toFixed(2);
-    updateCost();
-  }
+  const raw = cost * DEFAULT_MULTIPLIER;   // or * GST if you want
+  const suggested = roundToPsych99(raw);
+
+  $("rrpInc").value = suggested.toFixed(2);
+  updateCost();
+}
+
 
   function updateCost(){
     const cost = n($("cost").value);
@@ -456,5 +453,6 @@
 </script>
 </body>
 </html>
+
 
 
