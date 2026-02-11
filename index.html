@@ -5,17 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Margin Calculator</title>
 
-  <!-- Browser tab icon -->
   <link rel="icon" type="image/png" href="favicon.png">
 
   <style>
     :root{
-      --bg:#0b1020; --card:#121a33; --muted:#a9b3d1; --text:#eaf0ff;
+      --bg:#0b1020; --muted:#a9b3d1; --text:#eaf0ff;
       --line: rgba(255,255,255,.10);
       --chip: rgba(255,255,255,.08);
       --chipOn: rgba(140,170,255,.22);
       --chipBorder: rgba(255,255,255,.14);
+
+      --warnBg: rgba(255, 173, 51, .18);
+      --warnBorder: rgba(255, 173, 51, .45);
+      --badBg: rgba(255, 87, 87, .18);
+      --badBorder: rgba(255, 87, 87, .45);
     }
+
     *{ box-sizing:border-box; }
     body{
       margin:0;
@@ -32,19 +37,14 @@
       margin-bottom: 8px;
     }
     .brandIcon{
-      width:40px;
-      height:40px;
-      border-radius: 12px;
+      width:40px;height:40px;border-radius:12px;
       border: 1px solid rgba(255,255,255,.14);
       background: rgba(0,0,0,.20);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      overflow:hidden;
-      box-shadow: 0 8px 16px rgba(0,0,0,.25);
-      flex: 0 0 auto;
+      display:flex;align-items:center;justify-content:center;
+      overflow:hidden; box-shadow: 0 8px 16px rgba(0,0,0,.25);
+      flex:0 0 auto;
     }
-    .brandIcon img{ width:28px; height:28px; display:block; }
+    .brandIcon img{ width:28px;height:28px;display:block; }
 
     h1{ margin:0; font-size:28px; }
     p.sub{ margin:0 0 18px; color:var(--muted); }
@@ -67,10 +67,7 @@
 
     /* Tabs */
     .tabs{
-      display:flex;
-      gap:8px;
-      margin-bottom:12px;
-      padding-bottom:12px;
+      display:flex; gap:8px; margin-bottom:12px; padding-bottom:12px;
       border-bottom:1px solid var(--line);
       flex-wrap:wrap;
     }
@@ -97,19 +94,8 @@
     .field{ display:flex; flex-direction:column; gap:6px; margin-bottom:10px; }
     label{ font-size:12px; color:var(--muted); }
 
-    .rrpMetaRow{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:10px;
-    }
-
-    .rrpRow{
-      display:flex;
-      gap:8px;
-      align-items:flex-end;
-      flex-wrap:wrap; /* iPhone */
-    }
+    .rrpMetaRow{ display:flex; justify-content:space-between; align-items:center; gap:10px; }
+    .rrpRow{ display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap; }
 
     input{
       padding:12px;
@@ -117,25 +103,19 @@
       border:1px solid rgba(255,255,255,.14);
       background:rgba(0,0,0,.20);
       color:var(--text);
-      font-size:16px; /* iOS: prevents zoom on focus */
+      font-size:16px; /* iOS: prevent zoom */
       outline:none;
       width:100%;
     }
 
     .badge{
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      padding:6px 10px;
-      border-radius:999px;
-      font-size:12px;
-      font-weight:800;
+      display:inline-flex; align-items:center; gap:6px;
+      padding:6px 10px; border-radius:999px;
+      font-size:12px; font-weight:800;
       border:1px solid rgba(255,255,255,.14);
       background: rgba(255,255,255,.06);
       color: var(--text);
-      user-select:none;
-      white-space:nowrap;
-      flex:0 0 auto;
+      user-select:none; white-space:nowrap; flex:0 0 auto;
     }
     .badgeDot{ width:8px; height:8px; border-radius:999px; background: rgba(255,255,255,.55); }
     .badge.auto{ border-color: rgba(140,170,255,.45); background: rgba(140,170,255,.16); }
@@ -143,12 +123,7 @@
     .badge.manual{ border-color: rgba(255,215,0,.45); background: rgba(255,215,0,.14); }
     .badge.manual .badgeDot{ background: rgba(255,215,0,.95); }
 
-    .stepBtns{
-      display:flex;
-      gap:6px;
-      align-items:flex-end;
-      flex:0 0 auto;
-    }
+    .stepBtns{ display:flex; gap:6px; align-items:flex-end; flex:0 0 auto; }
     @media (max-width: 520px){
       .stepBtns{ width:100%; justify-content:space-between; }
     }
@@ -164,16 +139,12 @@
       min-width:48px;
       -webkit-tap-highlight-color: transparent;
       touch-action: manipulation;
-      -webkit-user-select:none;
       user-select:none;
     }
     .stepBtns button:hover{ background:var(--chipOn); }
 
     .actionsRow{
-      display:flex;
-      gap:8px;
-      margin-top:10px;
-      flex-wrap:wrap;
+      display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;
     }
     .actionBtn{
       padding:10px 12px;
@@ -188,36 +159,102 @@
     }
     .actionBtn:hover{ background:var(--chipOn); }
 
-    /* Table controls */
+    /* === Table section === */
     .tableHeaderRow{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
+      display:flex; align-items:center; justify-content:space-between;
+      gap:10px; margin-bottom:10px; flex-wrap:wrap;
+    }
+
+    /* Sticky summary strip (inside scroll area) */
+    .summaryStrip{
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(10,14,28,.92);
+      backdrop-filter: blur(8px);
+      border-radius: 12px;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+    .summaryGrid{
+      display:grid;
+      grid-template-columns: repeat(4, 1fr);
       gap:10px;
-      margin-bottom:10px;
-      flex-wrap:wrap;
     }
-    .seg{
+    .summaryItem{
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.05);
+      border-radius: 12px;
+      padding: 8px 10px;
+      min-width: 0;
+    }
+    .summaryLabel{
+      font-size:11px;
+      color: var(--muted);
+      margin-bottom: 2px;
+      white-space: nowrap;
+      overflow:hidden;
+      text-overflow: ellipsis;
+    }
+    .summaryValue{
+      font-size:14px;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      overflow:hidden;
+      text-overflow: ellipsis;
+    }
+    .summaryValue.bad{ color: #ffb6b6; }
+    .summaryValue.warn{ color: #ffd7a3; }
+
+    @media (max-width: 520px){
+      .summaryGrid{ grid-template-columns: repeat(2, 1fr); }
+    }
+
+    /* One-hand mode controls bar (bottom on phones) */
+    .chipBar{
       display:flex;
-      gap:6px;
+      gap:8px;
       flex-wrap:wrap;
     }
-    .segBtn{
+    .chipBtn{
       padding:8px 10px;
       border-radius:999px;
       border:1px solid var(--chipBorder);
       background:var(--chip);
       color:var(--text);
       font-size:12px;
-      font-weight:800;
+      font-weight:900;
       cursor:pointer;
       -webkit-tap-highlight-color: transparent;
       touch-action: manipulation;
       user-select:none;
     }
-    .segBtn[aria-pressed="true"]{
+    .chipBtn[aria-pressed="true"]{
       background:var(--chipOn);
       border-color: rgba(140,170,255,.45);
+    }
+
+    /* On iPhone: pin the increment bar to bottom for one-hand use */
+    @media (max-width: 520px){
+      .oneHandDock{
+        position: sticky;
+        bottom: 0;
+        z-index: 4;
+        margin-top: 10px;
+        padding-top: 10px;
+        background: rgba(10,14,28,.88);
+        backdrop-filter: blur(8px);
+        border-top: 1px solid rgba(255,255,255,.10);
+      }
+      .chipBar{
+        flex-wrap: nowrap;
+        overflow:auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 6px;
+      }
+      .chipBtn{ flex: 0 0 auto; }
     }
 
     .tableScroll{
@@ -227,7 +264,7 @@
       border-radius:12px;
     }
     @media (max-width: 520px){
-      .tableScroll{ max-height: 320px; }
+      .tableScroll{ max-height: 340px; }
     }
 
     table{
@@ -247,8 +284,8 @@
       border-bottom:1px solid rgba(255,255,255,.08);
       white-space:nowrap;
       position:sticky;
-      top:0;
-      z-index:1;
+      top: 52px; /* below summary strip; adjusted in JS with CSS var would be fancier */
+      z-index:2;
     }
     tbody td{
       padding:10px;
@@ -266,6 +303,22 @@
 
     /* Bold GP% column */
     td.gpCol{ font-weight:800; }
+
+    /* Validation callouts */
+    .notice{
+      display:none;
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.05);
+      color: var(--text);
+      font-size:12px;
+      line-height:1.35;
+    }
+    .notice.show{ display:block; }
+    .notice.warn{ border-color: var(--warnBorder); background: var(--warnBg); }
+    .notice.bad{ border-color: var(--badBorder); background: var(--badBg); }
 
     .hint{ font-size:12px; color:var(--muted); margin-top:10px; line-height:1.35; }
   </style>
@@ -320,8 +373,10 @@
           <button type="button" class="actionBtn" id="resetBtn">Reset</button>
         </div>
 
+        <div class="notice" id="validationNotice"></div>
+
         <div class="hint">
-          Enter moves Cost → RRP. Table shows ±$100 around the current RRP. Scroll inside the table on iPhone.
+          Tip: On iPhone, use the increment bar at the bottom of the GP% panel (one-hand).
         </div>
       </section>
 
@@ -357,15 +412,28 @@
     <aside class="card" id="tableCard">
       <div class="tableHeaderRow">
         <h2 style="margin:0;font-size:16px;">GP% sensitivity</h2>
+        <div style="font-size:12px;color:var(--muted);" id="rangeHint">Range: ±$100 (adaptive)</div>
+      </div>
 
-        <div class="seg" aria-label="Increment selector">
-          <button class="segBtn" id="incAuto" type="button" data-inc="auto" aria-pressed="true">Auto</button>
-          <button class="segBtn" type="button" data-inc="1" aria-pressed="false">1</button>
-          <button class="segBtn" type="button" data-inc="5" aria-pressed="false">5</button>
-          <button class="segBtn" type="button" data-inc="10" aria-pressed="false">10</button>
-          <button class="segBtn" type="button" data-inc="25" aria-pressed="false">25</button>
-          <button class="segBtn" type="button" data-inc="50" aria-pressed="false">50</button>
-          <button class="segBtn" type="button" data-inc="100" aria-pressed="false">100</button>
+      <!-- Sticky summary strip lives ABOVE the scroll area -->
+      <div class="summaryStrip" id="summaryStrip">
+        <div class="summaryGrid">
+          <div class="summaryItem">
+            <div class="summaryLabel">Current RRP (inc)</div>
+            <div class="summaryValue" id="sumRrp">$—</div>
+          </div>
+          <div class="summaryItem">
+            <div class="summaryLabel">GP ($)</div>
+            <div class="summaryValue" id="sumGp">$—</div>
+          </div>
+          <div class="summaryItem">
+            <div class="summaryLabel">GP%</div>
+            <div class="summaryValue" id="sumGpPct">—%</div>
+          </div>
+          <div class="summaryItem">
+            <div class="summaryLabel">Markup%</div>
+            <div class="summaryValue" id="sumMuPct">—%</div>
+          </div>
         </div>
       </div>
 
@@ -383,7 +451,20 @@
         </table>
       </div>
 
-      <div class="hint" id="incHint">Increment: Auto (based on RRP)</div>
+      <!-- One-hand increment bar -->
+      <div class="oneHandDock">
+        <div class="chipBar" aria-label="Increment selector">
+          <button class="chipBtn" type="button" data-inc="auto" aria-pressed="true">Auto</button>
+          <button class="chipBtn" type="button" data-inc="1" aria-pressed="false">1</button>
+          <button class="chipBtn" type="button" data-inc="5" aria-pressed="false">5</button>
+          <button class="chipBtn" type="button" data-inc="10" aria-pressed="false">10</button>
+          <button class="chipBtn" type="button" data-inc="25" aria-pressed="false">25</button>
+          <button class="chipBtn" type="button" data-inc="50" aria-pressed="false">50</button>
+          <button class="chipBtn" type="button" data-inc="100" aria-pressed="false">100</button>
+        </div>
+      </div>
+
+      <div class="hint" id="incHint">Increment: Auto</div>
     </aside>
   </div>
 </div>
@@ -392,14 +473,11 @@
   const GST = 1.15;
   const DEFAULT_MULTIPLIER = 1.84;
 
-  const RANGE = 100; // +/- range for sensitivity table
-
   const $ = id => document.getElementById(id);
   const n = v => Number.isFinite(+v) ? +v : NaN;
   const money = v => Number.isFinite(v) ? v.toLocaleString("en-NZ",{style:"currency",currency:"NZD"}) : "$—";
   const pct = v => Number.isFinite(v) ? v.toFixed(2)+"%" : "—%";
 
-  // Psychological pricing: nearest .99
   function roundToPsych99(v){
     if(!Number.isFinite(v)) return v;
     const base = Math.floor(v);
@@ -410,9 +488,7 @@
     let bestDist = Math.abs(v - best);
     for(const c of candidates){
       const d = Math.abs(v - c);
-      if(d < bestDist){
-        best = c; bestDist = d;
-      }
+      if(d < bestDist){ best = c; bestDist = d; }
     }
     return Math.round(best * 100) / 100;
   }
@@ -421,41 +497,47 @@
     const sellEx = rrpInc / GST;
     const gp$ = sellEx - costEx;
     return {
+      sellEx,
       gp$,
       gpPct: sellEx ? (gp$ / sellEx) * 100 : NaN,
       muPct: costEx ? (gp$ / costEx) * 100 : NaN
     };
   }
 
-  // Auto increment rules based on current RRP
+  // Adaptive range based on RRP (simple + practical)
+  // < $200  -> ±$50
+  // $200–$999 -> ±$100
+  // $1000–$2499 -> ±$250
+  // >= $2500 -> ±$500
+  function adaptiveRange(rrp){
+    if(rrp < 200) return 50;
+    if(rrp < 1000) return 100;
+    if(rrp < 2500) return 250;
+    return 500;
+  }
+
   function autoIncrement(rrp){
     if(rrp < 100) return 5;
     if(rrp <= 500) return 10;
     return 50;
   }
 
-  // Build list of RRPs in range with step, ensuring the exact current rrp is included
   function buildRrpSeries(center, range, step){
     const round2 = v => Math.round(v * 100) / 100;
-
     const start = center - range;
     const end   = center + range;
 
-    // align to the step grid for nicer numbers (using cents-safe math)
     const startAligned = Math.ceil(start / step) * step;
-
     const vals = [];
     for(let v = startAligned; v <= end + 1e-9; v += step){
       const r = round2(v);
       if(r > 0) vals.push(r);
     }
 
-    // Ensure center exists exactly (so the highlight row always appears)
     const c = round2(center);
     const hasCenter = vals.some(x => Math.abs(x - c) < 0.005);
     if(!hasCenter && c > 0) vals.push(c);
 
-    // Unique + sort
     vals.sort((a,b)=>a-b);
     const uniq = [];
     for(const v of vals){
@@ -465,6 +547,7 @@
   }
 
   let rrpManuallyEdited = false;
+  let selectedIncrement = null; // null = Auto
 
   function setRrpMode(mode){
     const badge = $("rrpModeBadge");
@@ -484,19 +567,16 @@
     setRrpMode("auto");
   }
 
-  // Increment selector state: null means Auto, otherwise a number
-  let selectedIncrement = null;
-
   function updateIncrementUI(){
-    document.querySelectorAll(".segBtn").forEach(btn=>{
-      const val = btn.dataset.inc;
+    document.querySelectorAll(".chipBtn").forEach(btn=>{
+      const v = btn.dataset.inc;
       const pressed =
-        (val === "auto" && selectedIncrement === null) ||
-        (val !== "auto" && Number(val) === selectedIncrement);
+        (v === "auto" && selectedIncrement === null) ||
+        (v !== "auto" && Number(v) === selectedIncrement);
       btn.setAttribute("aria-pressed", pressed ? "true" : "false");
     });
 
-    const label = (selectedIncrement === null) ? "Auto (based on RRP)" : String(selectedIncrement);
+    const label = (selectedIncrement === null) ? "Auto" : String(selectedIncrement);
     $("incHint").textContent = `Increment: ${label}`;
   }
 
@@ -505,7 +585,6 @@
     const row = sc.querySelector("tr.standard");
     if(!row) return;
 
-    // Wait a tick so layout is correct
     requestAnimationFrame(() => {
       const desired = row.offsetTop - (sc.clientHeight / 2) + (row.clientHeight / 2);
       const max = sc.scrollHeight - sc.clientHeight;
@@ -513,18 +592,100 @@
     });
   }
 
+  function setSummary(cost, rrp){
+    const sumRrp = $("sumRrp");
+    const sumGp = $("sumGp");
+    const sumGpPct = $("sumGpPct");
+    const sumMuPct = $("sumMuPct");
+
+    if(!Number.isFinite(cost) || !Number.isFinite(rrp) || rrp <= 0){
+      sumRrp.textContent = "$—";
+      sumGp.textContent = "$—";
+      sumGpPct.textContent = "—%";
+      sumMuPct.textContent = "—%";
+      sumGp.classList.remove("bad","warn");
+      sumGpPct.classList.remove("bad","warn");
+      sumMuPct.classList.remove("bad","warn");
+      return;
+    }
+
+    const t = calc(cost, rrp);
+    sumRrp.textContent = money(rrp);
+    sumGp.textContent = money(t.gp$);
+    sumGpPct.textContent = pct(t.gpPct);
+    sumMuPct.textContent = pct(t.muPct);
+
+    // Light severity colouring (only on the value, not whole row)
+    const isBad = t.gp$ < 0;
+    const isWarn = !isBad && t.gpPct < 10; // low margin warning threshold
+
+    for(const el of [sumGp, sumGpPct, sumMuPct]){
+      el.classList.remove("bad","warn");
+      if(isBad) el.classList.add("bad");
+      else if(isWarn) el.classList.add("warn");
+    }
+  }
+
+  function validateInputs(cost, rrp){
+    const notice = $("validationNotice");
+    notice.className = "notice";
+    notice.textContent = "";
+
+    if(!Number.isFinite(cost) && !Number.isFinite(rrp)){
+      return;
+    }
+
+    if(Number.isFinite(cost) && cost < 0){
+      notice.classList.add("show","bad");
+      notice.textContent = "Cost can’t be negative.";
+      return;
+    }
+
+    if(Number.isFinite(rrp) && rrp < 0){
+      notice.classList.add("show","bad");
+      notice.textContent = "RRP can’t be negative.";
+      return;
+    }
+
+    if(Number.isFinite(cost) && Number.isFinite(rrp) && rrp > 0){
+      const t = calc(cost, rrp);
+      if(t.sellEx <= 0){
+        notice.classList.add("show","bad");
+        notice.textContent = "Sell (ex GST) would be zero or negative at this RRP.";
+        return;
+      }
+      if(t.gp$ < 0){
+        notice.classList.add("show","bad");
+        notice.textContent = "Negative GP at this price (sell ex GST is below cost).";
+        return;
+      }
+      if(t.gpPct < 10){
+        notice.classList.add("show","warn");
+        notice.textContent = "Low margin warning: GP% is under 10% at this price.";
+        return;
+      }
+    }
+  }
+
   function updateCost(){
     const cost = n($("cost").value);
     const rrp  = n($("rrpInc").value);
     const body = $("gpTableBody");
+
+    // summary + validation
+    setSummary(cost, rrp);
+    validateInputs(cost, rrp);
 
     if(!Number.isFinite(cost) || !Number.isFinite(rrp) || rrp <= 0){
       body.innerHTML = "";
       return;
     }
 
+    const range = adaptiveRange(rrp);
+    $("rangeHint").textContent = `Range: ±$${range} (adaptive)`;
+
     const step = selectedIncrement ?? autoIncrement(rrp);
-    const rrps = buildRrpSeries(rrp, RANGE, step);
+    const rrps = buildRrpSeries(rrp, range, step);
 
     body.innerHTML = "";
 
@@ -542,7 +703,6 @@
       `);
     }
 
-    // Keep the highlighted row centered within the scroll viewport
     centerHighlightRow();
   }
 
@@ -571,7 +731,7 @@
     $("tab-margin").setAttribute("aria-selected", isCost ? "false" : "true");
   }
 
-  // Enter in cost -> keep flow to RRP
+  // Enter in cost -> suggest in AUTO mode, then focus RRP
   $("cost").addEventListener("keydown", e => {
     if(e.key === "Enter"){
       e.preventDefault();
@@ -584,7 +744,7 @@
     }
   });
 
-  // Cost changes: always update RRP in AUTO mode
+  // Cost changes: keep RRP updating in AUTO mode
   $("cost").addEventListener("input", () => {
     if(!rrpManuallyEdited){
       suggestRrpFromCost();
@@ -592,7 +752,7 @@
     updateCost();
   });
 
-  // Clearing RRP should keep it blank (no forced auto-refill)
+  // RRP manual edit handling (clearing keeps it blank)
   $("rrpInc").addEventListener("input", () => {
     const val = $("rrpInc").value.trim();
 
@@ -606,30 +766,26 @@
     rrpManuallyEdited = false;
     setRrpMode("auto");
     $("gpTableBody").innerHTML = "";
+    setSummary(n($("cost").value), NaN);
+    validateInputs(n($("cost").value), NaN);
   });
 
-  // Step buttons:
-  // - pointerdown so it feels snappy on mobile
-  // - prevent default so it doesn't steal focus / pop keyboard
+  // Step buttons (snappy + no keyboard pop on iPhone)
   document.querySelectorAll(".stepBtns button").forEach(btn=>{
     btn.addEventListener("pointerdown", (e)=>{
       e.preventDefault();
-
       const step = Number(btn.dataset.step);
       const rrp = n($("rrpInc").value) || 0;
       const next = rrp + step;
-
       $("rrpInc").value = (Math.round(next * 100) / 100).toFixed(2);
-
       rrpManuallyEdited = true;
       setRrpMode("manual");
-
       updateCost();
     });
   });
 
-  // Increment selector buttons
-  document.querySelectorAll(".segBtn").forEach(btn=>{
+  // Increment selector (one-hand bar)
+  document.querySelectorAll(".chipBtn").forEach(btn=>{
     btn.addEventListener("click", ()=>{
       const v = btn.dataset.inc;
       selectedIncrement = (v === "auto") ? null : Number(v);
@@ -654,6 +810,12 @@
     $("reqSell").textContent = "$—";
     $("reqRrp").textContent = "$—";
 
+    $("validationNotice").className = "notice";
+    $("validationNotice").textContent = "";
+    $("rangeHint").textContent = "Range: ±$100 (adaptive)";
+
+    setSummary(NaN, NaN);
+
     showTab("cost");
     $("cost").focus();
   });
@@ -669,6 +831,7 @@
   showTab("cost");
   setRrpMode("auto");
   updateIncrementUI();
+  setSummary(NaN, NaN);
   $("cost").focus();
 </script>
 </body>
