@@ -42,6 +42,7 @@
       justify-content:center;
       overflow:hidden;
       box-shadow: 0 8px 16px rgba(0,0,0,.25);
+      flex: 0 0 auto;
     }
     .brandIcon img{
       width:28px;
@@ -75,6 +76,7 @@
       margin-bottom:12px;
       padding-bottom:12px;
       border-bottom:1px solid var(--line);
+      flex-wrap: wrap;
     }
     .tabBtn{
       border:1px solid var(--chipBorder);
@@ -108,6 +110,7 @@
       display:flex;
       gap:8px;
       align-items:flex-end;
+      flex-wrap: wrap; /* important for iPhone */
     }
 
     input{
@@ -116,7 +119,7 @@
       border:1px solid rgba(255,255,255,.14);
       background:rgba(0,0,0,.20);
       color:var(--text);
-      font-size:15px;
+      font-size:16px; /* iOS: prevents zoom on focus */
       outline:none;
       width:100%;
     }
@@ -134,6 +137,7 @@
       color: var(--text);
       user-select:none;
       white-space:nowrap;
+      flex: 0 0 auto;
     }
     .badgeDot{
       width:8px; height:8px; border-radius:999px;
@@ -155,9 +159,17 @@
       display:flex;
       gap:6px;
       align-items:flex-end;
+      flex: 0 0 auto;
+    }
+    /* On small screens, put buttons on their own row and space them out */
+    @media (max-width: 520px){
+      .stepBtns{
+        width:100%;
+        justify-content:space-between;
+      }
     }
     .stepBtns button{
-      padding:10px 10px;
+      padding:12px 12px;          /* bigger touch target */
       border-radius:10px;
       border:1px solid var(--chipBorder);
       background:var(--chip);
@@ -165,7 +177,9 @@
       font-size:13px;
       font-weight:700;
       cursor:pointer;
-      min-width:44px;
+      min-width:48px;             /* bigger touch target */
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
     .stepBtns button:hover{ background:var(--chipOn); }
 
@@ -183,8 +197,20 @@
       color:var(--text);
       font-weight:800;
       cursor:pointer;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
     .actionBtn:hover{ background:var(--chipOn); }
+
+    .tableScroll{
+      overflow:auto;
+      -webkit-overflow-scrolling: touch;
+      max-height: 520px;
+      border-radius:12px;
+    }
+    @media (max-width: 520px){
+      .tableScroll{ max-height: 320px; }
+    }
 
     table{
       width:100%;
@@ -202,6 +228,9 @@
       background:rgba(0,0,0,.24);
       border-bottom:1px solid rgba(255,255,255,.08);
       white-space: nowrap;
+      position: sticky; /* nice on scroll */
+      top: 0;
+      z-index: 1;
     }
     tbody td{
       padding:10px;
@@ -253,13 +282,13 @@
         <div class="field">
           <div class="rrpMetaRow">
             <label>RRP (inc GST)</label>
-            <span class="badge auto" id="rrpModeBadge" title="Auto-updates from Cost until you manually edit RRP">
+            <span class="badge auto" id="rrpModeBadge" title="Auto-suggests from Cost when RRP is blank. If you edit RRP it switches to MANUAL.">
               <span class="badgeDot" aria-hidden="true"></span>
               <span id="rrpModeText">AUTO</span>
             </span>
           </div>
           <div class="rrpRow">
-            <input id="rrpInc" type="number" step="0.01" inputmode="decimal" placeholder="auto-suggests from cost">
+            <input id="rrpInc" type="number" step="0.01" inputmode="decimal" placeholder="leave blank to auto-suggest">
             <div class="stepBtns" aria-label="RRP step buttons">
               <button type="button" data-step="-10">-10</button>
               <button type="button" data-step="-1">-1</button>
@@ -274,7 +303,7 @@
         </div>
 
         <div class="hint">
-          Enter moves Cost → RRP. If you type/change RRP, it switches to MANUAL and stops auto-updating.
+          Enter moves Cost → RRP. Clearing RRP leaves it blank (no forced auto-fill). Table shows ±$100 in $10 steps.
         </div>
       </section>
 
@@ -310,19 +339,21 @@
     <aside class="card" id="tableCard">
       <h2 style="margin:0 0 10px;font-size:16px;">GP% sensitivity</h2>
 
-      <table>
-        <thead>
-          <tr>
-            <th>RRP (inc)</th>
-            <th class="right">GP ($)</th>
-            <th class="right">GP%</th>
-            <th class="right">Markup%</th>
-          </tr>
-        </thead>
-        <tbody id="gpTableBody"></tbody>
-      </table>
+      <div class="tableScroll">
+        <table>
+          <thead>
+            <tr>
+              <th>RRP (inc)</th>
+              <th class="right">GP ($)</th>
+              <th class="right">GP%</th>
+              <th class="right">Markup%</th>
+            </tr>
+          </thead>
+          <tbody id="gpTableBody"></tbody>
+        </table>
+      </div>
 
-      <div class="hint">RRP ± $20 in $10 steps. Yellow row = current price.</div>
+      <div class="hint">Yellow row = current RRP. Scroll inside the table on small screens.</div>
     </aside>
   </div>
 </div>
@@ -378,13 +409,7 @@
     const cost = n($("cost").value);
     if(!Number.isFinite(cost) || cost <= 0) return;
 
-    // Respect manual override
-    if(rrpManuallyEdited){
-      setRrpMode("manual");
-      return;
-    }
-
-    const raw = cost * DEFAULT_MULTIPLIER; // if you want to include GST here: * GST
+    const raw = cost * DEFAULT_MULTIPLIER; // if you want GST here: * GST
     const suggested = roundToPsych99(raw);
     $("rrpInc").value = suggested.toFixed(2);
     setRrpMode("auto");
@@ -402,7 +427,7 @@
 
     body.innerHTML = "";
 
-    for(let d=-20; d<=20; d+=10){
+    for(let d=-100; d<=100; d+=10){
       const r = rrp + d;
       if(r <= 0) continue;
 
@@ -445,35 +470,46 @@
     $("tab-margin").setAttribute("aria-selected", isCost ? "false" : "true");
   }
 
-  // Keyboard: Enter in cost -> auto-suggest (if AUTO) then focus RRP
+  // Enter in cost -> if RRP blank and in AUTO, suggest then focus RRP
   $("cost").addEventListener("keydown", e => {
     if(e.key === "Enter"){
       e.preventDefault();
-      suggestRrpFromCost();
+      const rrpBlank = $("rrpInc").value.trim() === "";
+      if(!rrpManuallyEdited && rrpBlank){
+        suggestRrpFromCost();
+      }
       updateCost();
       $("rrpInc").focus();
       $("rrpInc").select();
     }
   });
 
-  // Cost changes: update suggested RRP in AUTO mode
+  // Cost changes: only suggest when RRP is blank AND we're not in manual mode
   $("cost").addEventListener("input", () => {
-    suggestRrpFromCost();
-    updateCost();
-  });
-
-  // Manual edit of RRP switches to MANUAL.
-  // If RRP is cleared, revert to AUTO and re-suggest from cost.
-  $("rrpInc").addEventListener("input", () => {
-    if($("rrpInc").value.trim() !== ""){
-      rrpManuallyEdited = true;
-      setRrpMode("manual");
-    }else{
-      rrpManuallyEdited = false;
-      setRrpMode("auto");
+    const rrpBlank = $("rrpInc").value.trim() === "";
+    if(!rrpManuallyEdited && rrpBlank){
       suggestRrpFromCost();
     }
     updateCost();
+  });
+
+  // Manual edit of RRP:
+  // - if user types something -> MANUAL, stop auto updates
+  // - if user clears it -> keep it blank, revert to AUTO, and clear the table (no forced refill)
+  $("rrpInc").addEventListener("input", () => {
+    const val = $("rrpInc").value.trim();
+
+    if(val !== ""){
+      rrpManuallyEdited = true;
+      setRrpMode("manual");
+      updateCost();
+      return;
+    }
+
+    // Allow it to stay blank
+    rrpManuallyEdited = false;
+    setRrpMode("auto");
+    $("gpTableBody").innerHTML = "";
   });
 
   // Step buttons count as MANUAL
@@ -501,7 +537,7 @@
     rrpManuallyEdited = false;
     setRrpMode("auto");
 
-    // Also clear margin tab outputs/inputs (nice & clean)
+    // Clear margin tab outputs/inputs
     $("cost2").value = "";
     $("targetGp").value = "";
     $("reqSell").textContent = "$—";
