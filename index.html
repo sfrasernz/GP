@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Margin Calculator</title>
 
+  <!-- Keep favicon in browser tab -->
   <link rel="icon" type="image/png" href="favicon.png">
 
   <style>
@@ -22,6 +23,15 @@
 
       --dangerBg: rgba(255, 87, 87, .14);
       --dangerBorder: rgba(255, 87, 87, .40);
+
+      --focusRing: rgba(140,170,255,.45);
+      --inputLine: rgba(255,255,255,.14);
+
+      --warnLine: rgba(255, 173, 51, .65);
+      --badLine: rgba(255, 87, 87, .70);
+
+      --clearBg: rgba(255,255,255,.08);
+      --clearBgHover: rgba(255,255,255,.14);
     }
 
     *{ box-sizing:border-box; }
@@ -33,24 +43,9 @@
     }
     .wrap{ max-width: 1100px; margin:auto; padding: 24px 16px 40px; }
 
-    .titleRow{
-      display:flex;
-      align-items:center;
-      gap:12px;
-      margin-bottom: 8px;
-    }
-    .brandIcon{
-      width:40px;height:40px;border-radius:12px;
-      border: 1px solid rgba(255,255,255,.14);
-      background: rgba(0,0,0,.20);
-      display:flex;align-items:center;justify-content:center;
-      overflow:hidden; box-shadow: 0 8px 16px rgba(0,0,0,.25);
-      flex:0 0 auto;
-    }
-    .brandIcon img{ width:28px;height:28px;display:block; }
-
+    .titleRow{ margin-bottom: 12px; }
     h1{ margin:0; font-size:28px; }
-    p.sub{ margin:0 0 18px; color:var(--muted); }
+    p.sub{ margin:6px 0 0; color:var(--muted); }
 
     .layout{
       display:grid;
@@ -100,16 +95,55 @@
     .rrpMetaRow{ display:flex; justify-content:space-between; align-items:center; gap:10px; }
     .rrpRow{ display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap; }
 
+    /* Input with clear (×) */
+    .inputWrap{
+      position: relative;
+      width:100%;
+    }
     input{
       padding:12px;
+      padding-right:44px; /* room for clear button */
       border-radius:12px;
-      border:1px solid rgba(255,255,255,.14);
+      border:1px solid var(--inputLine);
       background:rgba(0,0,0,.20);
       color:var(--text);
       font-size:16px; /* iOS: prevent zoom */
       outline:none;
       width:100%;
+      transition: border-color .12s ease, box-shadow .12s ease;
     }
+    input:focus{
+      border-color: var(--focusRing);
+      box-shadow: 0 0 0 4px rgba(140,170,255,.12);
+    }
+
+    .clearBtn{
+      position:absolute;
+      right:8px;
+      top:50%;
+      transform: translateY(-50%);
+      width:30px;
+      height:30px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      background: var(--clearBg);
+      color: var(--text);
+      cursor:pointer;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      font-size:18px;
+      line-height:1;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      user-select:none;
+    }
+    .clearBtn:hover{ background: var(--clearBgHover); }
+    .inputWrap.hasValue .clearBtn{ display:flex; }
+
+    /* Validation tinting */
+    .inputWrap.warn input{ border-color: var(--warnLine); }
+    .inputWrap.bad  input{ border-color: var(--badLine); }
 
     .badge{
       display:inline-flex; align-items:center; gap:6px;
@@ -146,9 +180,7 @@
     }
     .stepBtns button:hover{ background:var(--chipOn); }
 
-    .actionsRow{
-      display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;
-    }
+    .actionsRow{ display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
     .actionBtn{
       padding:10px 12px;
       border-radius:12px;
@@ -161,8 +193,8 @@
       touch-action: manipulation;
       transition: transform .06s ease, background .12s ease, border-color .12s ease;
     }
-    .actionBtn:hover{ background:var(--chipOn); }
     .actionBtn:active{ transform: translateY(1px); }
+    .actionBtn:hover{ background:var(--chipOn); }
 
     /* Subtle red reset */
     .actionBtn.danger{
@@ -180,11 +212,7 @@
       gap:10px; margin-bottom:10px; flex-wrap:wrap;
     }
 
-    .chipBar{
-      display:flex;
-      gap:8px;
-      flex-wrap:wrap;
-    }
+    .chipBar{ display:flex; gap:8px; flex-wrap:wrap; }
     .chipBtn{
       padding:8px 10px;
       border-radius:999px;
@@ -215,10 +243,7 @@
       .tableScroll{ max-height: 340px; }
     }
 
-    /* Shadow appears once you've scrolled (premium "floating header" feel) */
-    .tableScroll.scrolling thead th{
-      box-shadow: 0 6px 12px rgba(0,0,0,.25);
-    }
+    .tableScroll.scrolling thead th{ box-shadow: 0 6px 12px rgba(0,0,0,.25); }
 
     table{
       width:100%;
@@ -230,7 +255,6 @@
       background:rgba(0,0,0,.10);
     }
 
-    /* Excel-style frozen header */
     thead th{
       position: sticky;
       top: 0;
@@ -245,7 +269,6 @@
       white-space:nowrap;
     }
 
-    /* Vertical grid lines */
     thead th:not(:last-child),
     tbody td:not(:last-child){
       border-right:1px solid rgba(255,255,255,.06);
@@ -259,16 +282,11 @@
       font-weight:400;
       transition: background .12s ease;
     }
-
     tbody tr:last-child td{ border-bottom:none; }
     .right{ text-align:right; }
 
-    /* Subtle zebra striping */
-    tbody tr:nth-child(odd){
-      background: rgba(255,255,255,.02);
-    }
+    tbody tr:nth-child(odd){ background: rgba(255,255,255,.02); }
 
-    /* Yellow standard row */
     tr.standard{
       background: rgba(255, 215, 0, 0.16) !important;
     }
@@ -276,14 +294,12 @@
       border-left: 4px solid #ffd700;
     }
 
-    /* Subtle "selected" row on tap/click */
     tr.selected{
       background: rgba(140,170,255,.09) !important;
     }
     tr.selected td:first-child{
       border-left: 4px solid rgba(140,170,255,.85);
     }
-    /* If the selected row is also the standard row, keep the yellow but show blue edge */
     tr.standard.selected{
       background: rgba(255, 215, 0, 0.16) !important;
     }
@@ -291,10 +307,7 @@
       border-left: 4px solid rgba(140,170,255,.90);
     }
 
-    /* Pulse animation when the highlighted row changes (subtle) */
-    tr.standard.flash{
-      animation: flashRow 420ms ease-out;
-    }
+    tr.standard.flash{ animation: flashRow 420ms ease-out; }
     @keyframes flashRow{
       0%   { filter: brightness(1.25); }
       100% { filter: brightness(1.0); }
@@ -319,12 +332,17 @@
 
     .hint{ font-size:12px; color:var(--muted); margin-top:10px; line-height:1.35; }
 
-    /* iPhone: bigger inputs/buttons for easier entry */
     @media (max-width: 520px){
       input{
-        font-size:18px;
-        padding:16px 14px;
+        font-size:19px;
+        padding:18px 14px;
+        padding-right:48px;
         border-radius:14px;
+      }
+      .clearBtn{
+        width:34px;
+        height:34px;
+        font-size:20px;
       }
       .stepBtns button{
         padding:14px 12px;
@@ -340,18 +358,13 @@
         padding:12px 14px;
         font-size:14px;
       }
-      label{
-        font-size:13px;
-      }
+      label{ font-size:13px; }
     }
   </style>
 </head>
 <body>
 <div class="wrap" id="pageWrap">
   <div class="titleRow">
-    <div class="brandIcon" aria-hidden="true">
-      <img src="favicon.png" alt="">
-    </div>
     <div>
       <h1>Margin Calculator</h1>
       <p class="sub">Cost ex GST · RRP inc GST · GST fixed at 15%</p>
@@ -370,7 +383,11 @@
       <section class="panel active" id="panel-cost">
         <div class="field">
           <label>Cost (ex GST)</label>
-          <input id="cost" type="number" step="0.01" inputmode="decimal" placeholder="e.g. 100.00">
+          <div class="inputWrap" id="wrap-cost">
+            <!-- text + inputmode allows commas while still showing numeric keypad -->
+            <input id="cost" type="text" inputmode="decimal" placeholder="e.g. 1,200.00" autocomplete="off">
+            <button class="clearBtn" type="button" aria-label="Clear cost" data-clear="cost">×</button>
+          </div>
         </div>
 
         <div class="field">
@@ -382,7 +399,10 @@
             </span>
           </div>
           <div class="rrpRow">
-            <input id="rrpInc" type="number" step="0.01" inputmode="decimal" placeholder="auto-suggests from cost">
+            <div class="inputWrap" id="wrap-rrp">
+              <input id="rrpInc" type="text" inputmode="decimal" placeholder="auto-suggests from cost" autocomplete="off">
+              <button class="clearBtn" type="button" aria-label="Clear RRP" data-clear="rrpInc">×</button>
+            </div>
             <div class="stepBtns" aria-label="RRP step buttons">
               <button type="button" data-step="-10">-10</button>
               <button type="button" data-step="-1">-1</button>
@@ -396,10 +416,10 @@
           <button type="button" class="actionBtn danger" id="resetBtn">Reset</button>
         </div>
 
-        <div class="notice" id="validationNotice"></div>
+        <div class="notice" id="validationNotice" aria-live="polite"></div>
 
         <div class="hint">
-          iOS tip: keyboard will stay open while typing (no auto-scroll while focused). Tap a table row to mark it.
+          Commas are OK (e.g. 12,000). Desktop shortcuts in RRP: ↑/↓ nudges by increment, Shift+↑/↓ nudges by 10×.
         </div>
       </section>
 
@@ -407,11 +427,18 @@
       <section class="panel" id="panel-margin">
         <div class="field">
           <label>Cost (ex GST)</label>
-          <input id="cost2" type="number" step="0.01" inputmode="decimal">
+          <div class="inputWrap" id="wrap-cost2">
+            <input id="cost2" type="text" inputmode="decimal" autocomplete="off">
+            <button class="clearBtn" type="button" aria-label="Clear cost" data-clear="cost2">×</button>
+          </div>
         </div>
         <div class="field">
           <label>Target GP%</label>
-          <input id="targetGp" type="number" step="0.01" inputmode="decimal">
+          <div class="inputWrap" id="wrap-targetGp">
+            <!-- keep this plain (no commas needed) -->
+            <input id="targetGp" type="text" inputmode="decimal" autocomplete="off">
+            <button class="clearBtn" type="button" aria-label="Clear target GP%" data-clear="targetGp">×</button>
+          </div>
         </div>
 
         <table style="margin-top:10px;">
@@ -453,8 +480,8 @@
           <thead>
             <tr>
               <th>RRP (inc)</th>
-              <th class="right">GP ($)</th>
               <th class="right">GP%</th>
+              <th class="right">GP ($)</th>
               <th class="right">Markup%</th>
             </tr>
           </thead>
@@ -472,9 +499,86 @@
   const DEFAULT_MULTIPLIER = 1.84;
 
   const $ = id => document.getElementById(id);
-  const n = v => Number.isFinite(+v) ? +v : NaN;
+
+  // Parse numbers allowing commas (display-only) and one decimal point.
+  function parseNum(str){
+    if(str == null) return NaN;
+    const s = String(str).trim();
+    if(!s) return NaN;
+    const cleaned = s.replace(/,/g, "").replace(/[^\d.\-]/g, "");
+    // guard: just "-" or "." etc
+    if(cleaned === "-" || cleaned === "." || cleaned === "-.") return NaN;
+    const v = Number(cleaned);
+    return Number.isFinite(v) ? v : NaN;
+  }
+
   const money = v => Number.isFinite(v) ? v.toLocaleString("en-NZ",{style:"currency",currency:"NZD"}) : "$—";
   const pct = v => Number.isFinite(v) ? v.toFixed(2)+"%" : "—%";
+
+  // Add thousands separators while typing (doesn't force 2dp; blur will).
+  function formatWithCommasWhileTyping(inputEl, {maxDecimals=2} = {}){
+    const raw = inputEl.value;
+    if(raw === "") return;
+
+    // remember caret position
+    const start = inputEl.selectionStart ?? raw.length;
+
+    // count "significant" chars to left (digits + dot) in the raw string
+    const leftRaw = raw.slice(0, start);
+    const leftCount = (leftRaw.match(/[\d.]/g) || []).length;
+
+    // clean input: keep digits, one dot, one leading minus
+    let s = raw.replace(/,/g, "");
+    s = s.replace(/[^\d.\-]/g, "");
+
+    // handle minus: only leading
+    s = s.replace(/(?!^)-/g, "");
+
+    // keep only first dot
+    const dotIdx = s.indexOf(".");
+    if(dotIdx !== -1){
+      const before = s.slice(0, dotIdx + 1);
+      const after  = s.slice(dotIdx + 1).replace(/\./g, "");
+      s = before + after;
+    }
+
+    // clamp decimals (typing-friendly)
+    if(dotIdx !== -1){
+      const parts = s.split(".");
+      parts[1] = (parts[1] || "").slice(0, maxDecimals);
+      s = parts[0] + "." + parts[1];
+    }
+
+    // split sign/int/dec
+    const neg = s.startsWith("-");
+    if(neg) s = s.slice(1);
+
+    const parts = s.split(".");
+    let intPart = parts[0].replace(/^0+(?=\d)/, ""); // remove leading zeros (keep one if needed)
+    const decPart = parts.length > 1 ? parts[1] : null;
+
+    // insert commas into integer
+    intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+    let out = (neg ? "-" : "") + (intPart || "0");
+    if(decPart !== null){
+      out += "." + decPart;
+    } else if(raw.endsWith(".")) {
+      // preserve trailing dot while typing
+      out += ".";
+    }
+
+    inputEl.value = out;
+
+    // restore caret based on leftCount (digits+dot)
+    let seen = 0;
+    let newPos = out.length;
+    for(let i=0;i<out.length;i++){
+      if(/[\d.]/.test(out[i])) seen++;
+      if(seen >= leftCount){ newPos = i + 1; break; }
+    }
+    inputEl.setSelectionRange(newPos, newPos);
+  }
 
   function roundToPsych99(v){
     if(!Number.isFinite(v)) return v;
@@ -552,49 +656,12 @@
     text.textContent = mode.toUpperCase();
   }
 
-  function suggestRrpFromCost(){
-    const cost = n($("cost").value);
-    if(!Number.isFinite(cost) || cost <= 0) return;
-
-    const raw = cost * DEFAULT_MULTIPLIER;
-    const suggested = roundToPsych99(raw);
-    $("rrpInc").value = suggested.toFixed(2);
-    setRrpMode("auto");
-  }
-
-  function updateIncrementUI(){
-    document.querySelectorAll(".chipBtn").forEach(btn=>{
-      const v = btn.dataset.inc;
-      const pressed =
-        (v === "auto" && selectedIncrement === null) ||
-        (v !== "auto" && Number(v) === selectedIncrement);
-      btn.setAttribute("aria-pressed", pressed ? "true" : "false");
-    });
-
-    const label = (selectedIncrement === null) ? "Auto" : String(selectedIncrement);
-    $("incHint").textContent = `Increment: ${label}`;
-  }
-
-  function centerHighlightRow(){
-    const sc = $("tableScroll");
-    const row = sc.querySelector("tr.standard");
-    if(!row) return;
-
-    requestAnimationFrame(() => {
-      const desired = row.offsetTop - (sc.clientHeight / 2) + (row.clientHeight / 2);
-      const max = sc.scrollHeight - sc.clientHeight;
-      sc.scrollTop = Math.max(0, Math.min(max, desired));
-    });
-  }
-
-  function blurActive(){
-    const el = document.activeElement;
-    if(el && el.tagName === "INPUT") el.blur();
-  }
-
-  function isTypingInInput(){
-    const el = document.activeElement;
-    return el && el.tagName === "INPUT";
+  function setWrapState(wrapId, state){
+    const w = $(wrapId);
+    if(!w) return;
+    w.classList.remove("warn","bad");
+    if(state === "warn") w.classList.add("warn");
+    if(state === "bad")  w.classList.add("bad");
   }
 
   function validateInputs(cost, rrp){
@@ -602,14 +669,19 @@
     notice.className = "notice";
     notice.textContent = "";
 
+    setWrapState("wrap-cost", null);
+    setWrapState("wrap-rrp", null);
+
     if(!Number.isFinite(cost) && !Number.isFinite(rrp)) return;
 
     if(Number.isFinite(cost) && cost < 0){
+      setWrapState("wrap-cost", "bad");
       notice.classList.add("show","bad");
       notice.textContent = "Cost can’t be negative.";
       return;
     }
     if(Number.isFinite(rrp) && rrp < 0){
+      setWrapState("wrap-rrp", "bad");
       notice.classList.add("show","bad");
       notice.textContent = "RRP can’t be negative.";
       return;
@@ -617,11 +689,13 @@
     if(Number.isFinite(cost) && Number.isFinite(rrp) && rrp > 0){
       const t = calc(cost, rrp);
       if(t.gp$ < 0){
+        setWrapState("wrap-rrp", "bad");
         notice.classList.add("show","bad");
         notice.textContent = "Negative GP at this price (sell ex GST is below cost).";
         return;
       }
       if(t.gpPct < 10){
+        setWrapState("wrap-rrp", "warn");
         notice.classList.add("show","warn");
         notice.textContent = "Low margin warning: GP% is under 10% at this price.";
         return;
@@ -635,6 +709,18 @@
     else sc.classList.remove("scrolling");
   }
 
+  function updateIncrementUI(){
+    document.querySelectorAll(".chipBtn").forEach(btn=>{
+      const v = btn.dataset.inc;
+      const pressed =
+        (v === "auto" && selectedIncrement === null) ||
+        (v !== "auto" && Number(v) === selectedIncrement);
+      btn.setAttribute("aria-pressed", pressed ? "true" : "false");
+    });
+    const label = (selectedIncrement === null) ? "Auto" : String(selectedIncrement);
+    $("incHint").textContent = `Increment: ${label}`;
+  }
+
   function applySelectedRowClass(){
     document.querySelectorAll("#gpTableBody tr").forEach(tr => tr.classList.remove("selected"));
     if(!selectedRowKey) return;
@@ -642,9 +728,79 @@
     if(tr) tr.classList.add("selected");
   }
 
+  function centerHighlightRow(){
+    const sc = $("tableScroll");
+    const row = sc.querySelector("tr.standard");
+    if(!row) return;
+    requestAnimationFrame(() => {
+      const desired = row.offsetTop - (sc.clientHeight / 2) + (row.clientHeight / 2);
+      const max = sc.scrollHeight - sc.clientHeight;
+      sc.scrollTop = Math.max(0, Math.min(max, desired));
+    });
+  }
+
+  function blurActive(){
+    const el = document.activeElement;
+    if(el && el.tagName === "INPUT") el.blur();
+  }
+  function isTypingInInput(){
+    const el = document.activeElement;
+    return el && el.tagName === "INPUT";
+  }
+
+  function syncClearButtons(){
+    document.querySelectorAll(".inputWrap").forEach(w=>{
+      const inp = w.querySelector("input");
+      if(!inp) return;
+      if((inp.value ?? "").trim() !== "") w.classList.add("hasValue");
+      else w.classList.remove("hasValue");
+    });
+  }
+
+  function setInputMoneyString(inputId, value){
+    const el = $(inputId);
+    if(!el) return;
+    if(!Number.isFinite(value)){
+      el.value = "";
+      return;
+    }
+    // keep commas and 2dp
+    el.value = value.toLocaleString("en-NZ", {minimumFractionDigits:2, maximumFractionDigits:2});
+  }
+
+  // Format to 2dp on blur (and keep commas), not while typing
+  function format2dpOnBlur(inputId){
+    const el = $(inputId);
+    if(!el) return;
+    el.addEventListener("blur", ()=>{
+      const v = parseNum(el.value);
+      if(!Number.isFinite(v)) return;
+      // targetGp is percent: keep 2dp, no commas
+      if(inputId === "targetGp"){
+        el.value = (Math.round(v * 100) / 100).toFixed(2);
+      } else {
+        setInputMoneyString(inputId, Math.round(v * 100) / 100);
+      }
+      syncClearButtons();
+      if(inputId === "cost" || inputId === "rrpInc") updateCost({center:true});
+      if(inputId === "cost2" || inputId === "targetGp") updateMargin();
+    });
+  }
+
+  function suggestRrpFromCost(){
+    const cost = parseNum($("cost").value);
+    if(!Number.isFinite(cost) || cost <= 0) return;
+
+    const raw = cost * DEFAULT_MULTIPLIER;
+    const suggested = roundToPsych99(raw);
+    setInputMoneyString("rrpInc", suggested);
+    setRrpMode("auto");
+    syncClearButtons();
+  }
+
   function updateCost({center=true} = {}){
-    const cost = n($("cost").value);
-    const rrp  = n($("rrpInc").value);
+    const cost = parseNum($("cost").value);
+    const rrp  = parseNum($("rrpInc").value);
     const body = $("gpTableBody");
 
     validateInputs(cost, rrp);
@@ -674,14 +830,13 @@
       body.insertAdjacentHTML("beforeend",`
         <tr class="${isStandard ? "standard" : ""}" data-key="${key}">
           <td>${money(r)}</td>
-          <td class="right">${money(t.gp$)}</td>
           <td class="right gpCol">${pct(t.gpPct)}</td>
+          <td class="right">${money(t.gp$)}</td>
           <td class="right">${pct(t.muPct)}</td>
         </tr>
       `);
     }
 
-    // keep selection after re-render (if still present)
     applySelectedRowClass();
 
     if(standardRowKey && standardRowKey !== lastStandardKey){
@@ -697,15 +852,16 @@
   }
 
   function updateMargin(){
-    const cost = n($("cost2").value);
-    const gp   = n($("targetGp").value) / 100;
+    const cost = parseNum($("cost2").value);
+    const gpPct = parseNum($("targetGp").value);
 
-    if(!Number.isFinite(cost) || !Number.isFinite(gp) || gp >= 1){
+    if(!Number.isFinite(cost) || !Number.isFinite(gpPct) || gpPct >= 100){
       $("reqSell").textContent = "$—";
       $("reqRrp").textContent = "$—";
       return;
     }
 
+    const gp = gpPct / 100;
     const sellEx = cost / (1 - gp);
     $("reqSell").textContent = money(sellEx);
     $("reqRrp").textContent = money(sellEx * GST);
@@ -721,6 +877,7 @@
     $("tab-margin").setAttribute("aria-selected", isCost ? "false" : "true");
   }
 
+  // ===== Interactions =====
   $("tableScroll").addEventListener("scroll", updateTableHeaderShadow, {passive:true});
   $("tableScroll").addEventListener("touchstart", blurActive, {passive:true});
 
@@ -728,37 +885,70 @@
     const el = document.activeElement;
     const isInputFocused = el && el.tagName === "INPUT";
     if(!isInputFocused) return;
-
     const tappedInput = e.target.closest("input");
     if(!tappedInput) blurActive();
   }, {passive:true});
 
-  // Tap/click a row to subtly highlight it (toggle)
+  // Tap row to highlight
   $("gpTableBody").addEventListener("pointerdown", (e)=>{
     const row = e.target.closest("tr");
     if(!row) return;
     const key = row.dataset.key;
     if(!key) return;
-
     selectedRowKey = (selectedRowKey === key) ? null : key;
     applySelectedRowClass();
   });
 
-  $("cost").addEventListener("keydown", e => {
-    if(e.key === "Enter"){
+  // Clear buttons
+  document.querySelectorAll(".clearBtn").forEach(btn=>{
+    btn.addEventListener("pointerdown", (e)=>{
       e.preventDefault();
-      if(!rrpManuallyEdited) suggestRrpFromCost();
-      updateCost({center:true});
-      $("rrpInc").focus();
-      $("rrpInc").select();
-    }
+      const id = btn.dataset.clear;
+      const el = $(id);
+      if(!el) return;
+
+      el.value = "";
+
+      if(id === "rrpInc"){
+        rrpManuallyEdited = false;
+        setRrpMode("auto");
+        $("gpTableBody").innerHTML = "";
+        selectedRowKey = null;
+        validateInputs(parseNum($("cost").value), NaN);
+      }
+      if(id === "cost"){
+        $("rrpInc").value = "";
+        rrpManuallyEdited = false;
+        setRrpMode("auto");
+        $("gpTableBody").innerHTML = "";
+        selectedRowKey = null;
+        validateInputs(NaN, NaN);
+      }
+      if(id === "cost2" || id === "targetGp"){
+        updateMargin();
+      }
+
+      syncClearButtons();
+      el.focus();
+    });
   });
 
+  // Thousands separators while typing (cost/rrp/cost2 only)
+  ["cost","rrpInc","cost2"].forEach(id=>{
+    const el = $(id);
+    el.addEventListener("input", ()=>{
+      formatWithCommasWhileTyping(el, {maxDecimals:2});
+      syncClearButtons();
+    });
+  });
+
+  // Cost -> (auto) suggest RRP while typing; don't scroll-center (iOS friendly)
   $("cost").addEventListener("input", () => {
     if(!rrpManuallyEdited) suggestRrpFromCost();
     updateCost({center:false});
   });
 
+  // RRP typing
   $("rrpInc").addEventListener("input", () => {
     const val = $("rrpInc").value.trim();
     if(val !== ""){
@@ -771,7 +961,18 @@
     setRrpMode("auto");
     $("gpTableBody").innerHTML = "";
     selectedRowKey = null;
-    validateInputs(n($("cost").value), NaN);
+    validateInputs(parseNum($("cost").value), NaN);
+  });
+
+  // Enter flow
+  $("cost").addEventListener("keydown", e => {
+    if(e.key === "Enter"){
+      e.preventDefault();
+      if(!rrpManuallyEdited) suggestRrpFromCost();
+      updateCost({center:true});
+      $("rrpInc").focus();
+      $("rrpInc").select();
+    }
   });
 
   $("rrpInc").addEventListener("keydown", e => {
@@ -783,20 +984,44 @@
     }
   });
 
+  // Keyboard shortcuts (desktop): ArrowUp/ArrowDown nudges RRP by increment; Shift = 10×
+  $("rrpInc").addEventListener("keydown", (e)=>{
+    if(e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+
+    // Only act when in RRP field
+    e.preventDefault();
+
+    const current = parseNum($("rrpInc").value) || 0;
+    const stepBase = selectedIncrement ?? autoIncrement(current || 0);
+    const step = stepBase * (e.shiftKey ? 10 : 1) * (e.key === "ArrowUp" ? 1 : -1);
+
+    const next = Math.max(0, current + step);
+    setInputMoneyString("rrpInc", Math.round(next * 100) / 100);
+
+    rrpManuallyEdited = true;
+    setRrpMode("manual");
+    syncClearButtons();
+    updateCost({center:true});
+  });
+
+  // Step buttons (no keyboard pop)
   document.querySelectorAll(".stepBtns button").forEach(btn=>{
     btn.addEventListener("pointerdown", (e)=>{
       e.preventDefault();
       blurActive();
       const step = Number(btn.dataset.step);
-      const rrp = n($("rrpInc").value) || 0;
+      const rrp = parseNum($("rrpInc").value) || 0;
       const next = rrp + step;
-      $("rrpInc").value = (Math.round(next * 100) / 100).toFixed(2);
+
+      setInputMoneyString("rrpInc", Math.round(next * 100) / 100);
       rrpManuallyEdited = true;
       setRrpMode("manual");
+      syncClearButtons();
       updateCost({center:true});
     });
   });
 
+  // Increment chips
   document.querySelectorAll(".chipBtn").forEach(btn=>{
     btn.addEventListener("click", ()=>{
       const v = btn.dataset.inc;
@@ -806,6 +1031,14 @@
     });
   });
 
+  // Margin tab events
+  $("cost2").addEventListener("input", updateMargin);
+  $("targetGp").addEventListener("input", ()=>{ syncClearButtons(); updateMargin(); });
+
+  // Format on blur
+  ["cost","rrpInc","cost2","targetGp"].forEach(format2dpOnBlur);
+
+  // Reset
   $("resetBtn").addEventListener("click", () => {
     blurActive();
 
@@ -825,25 +1058,29 @@
 
     $("validationNotice").className = "notice";
     $("validationNotice").textContent = "";
-    $("rangeHint").textContent = "Range: adaptive";
+    setWrapState("wrap-cost", null);
+    setWrapState("wrap-rrp", null);
 
+    $("rangeHint").textContent = "Range: adaptive";
     $("tableScroll").classList.remove("scrolling");
     lastStandardKey = null;
     selectedRowKey = null;
 
+    syncClearButtons();
     showTab("cost");
     $("cost").focus();
   });
 
+  // Tabs
   $("tab-cost").onclick = () => showTab("cost");
   $("tab-margin").onclick = () => showTab("margin");
 
-  $("cost2").oninput = $("targetGp").oninput = updateMargin;
-
+  // Init
   showTab("cost");
   setRrpMode("auto");
   updateIncrementUI();
   updateTableHeaderShadow();
+  syncClearButtons();
   $("cost").focus();
 </script>
 </body>
