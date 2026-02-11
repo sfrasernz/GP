@@ -286,7 +286,7 @@
 
 <script>
   const GST = 1.15;
-  const DEFAULT_MULTIPLIER = 1.825;
+  const DEFAULT_MULTIPLIER = 1.84;
 
   const $ = id => document.getElementById(id);
   const n = v => Number.isFinite(+v) ? +v : NaN;
@@ -337,7 +337,7 @@
     if(rrpNow !== "") return;
     if(rrpManuallyEdited) return;
 
-    const raw = cost * DEFAULT_MULTIPLIER * GST;
+    const raw = cost * DEFAULT_MULTIPLIER;
     const suggested = roundToPsych99(raw);
     $("rrpInc").value = suggested.toFixed(2);
     updateCost();
@@ -456,4 +456,5 @@
 </script>
 </body>
 </html>
+
 
