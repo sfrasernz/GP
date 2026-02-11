@@ -1,366 +1,787 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Margin Calculator</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Margin Calculator</title>
 
-<link rel="icon" type="image/png" href="favicon.png">
+  <link rel="icon" type="image/png" href="favicon.png">
 
-<style>
-:root{
-  --bg:#0b1020; --muted:#a9b3d1; --text:#eaf0ff;
-  --line: rgba(255,255,255,.10);
-  --chip: rgba(255,255,255,.08);
-  --chipOn: rgba(140,170,255,.22);
-  --chipBorder: rgba(255,255,255,.14);
-}
+  <style>
+    :root{
+      --bg:#0b1020; --muted:#a9b3d1; --text:#eaf0ff;
+      --line: rgba(255,255,255,.10);
+      --chip: rgba(255,255,255,.08);
+      --chipOn: rgba(140,170,255,.22);
+      --chipBorder: rgba(255,255,255,.14);
 
-*{ box-sizing:border-box; }
+      --warnBg: rgba(255, 173, 51, .18);
+      --warnBorder: rgba(255, 173, 51, .45);
+      --badBg: rgba(255, 87, 87, .18);
+      --badBorder: rgba(255, 87, 87, .45);
+    }
 
-body{
-  margin:0;
-  font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
-  background: radial-gradient(1200px 800px at 20% 0%, #16214a, var(--bg));
-  color:var(--text);
-}
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      background: radial-gradient(1200px 800px at 20% 0%, #16214a, var(--bg));
+      color:var(--text);
+    }
+    .wrap{ max-width: 1100px; margin:auto; padding: 24px 16px 40px; }
 
-.wrap{ max-width:1100px;margin:auto;padding:24px 16px 40px; }
+    .titleRow{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      margin-bottom: 8px;
+    }
+    .brandIcon{
+      width:40px;height:40px;border-radius:12px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.20);
+      display:flex;align-items:center;justify-content:center;
+      overflow:hidden; box-shadow: 0 8px 16px rgba(0,0,0,.25);
+      flex:0 0 auto;
+    }
+    .brandIcon img{ width:28px;height:28px;display:block; }
 
-.titleRow{
-  display:flex;align-items:center;gap:12px;margin-bottom:8px;
-}
-.brandIcon{
-  width:40px;height:40px;border-radius:12px;
-  border:1px solid rgba(255,255,255,.14);
-  background:rgba(0,0,0,.2);
-  display:flex;align-items:center;justify-content:center;
-}
-.brandIcon img{ width:28px;height:28px; }
+    h1{ margin:0; font-size:28px; }
+    p.sub{ margin:0 0 18px; color:var(--muted); }
 
-h1{ margin:0;font-size:28px; }
-p.sub{ margin:0 0 18px;color:var(--muted); }
+    .layout{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+    @media (min-width: 980px){
+      .layout{ grid-template-columns: 1.15fr .85fr; }
+    }
 
-.layout{
-  display:grid;
-  grid-template-columns:1fr;
-  gap:14px;
-}
-@media (min-width:980px){
-  .layout{ grid-template-columns:1.15fr .85fr; }
-}
+    .card{
+      background: rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:16px;
+      padding:16px;
+    }
 
-.card{
-  background:rgba(255,255,255,.04);
-  border:1px solid rgba(255,255,255,.08);
-  border-radius:16px;
-  padding:16px;
-}
+    /* Tabs */
+    .tabs{
+      display:flex; gap:8px; margin-bottom:12px; padding-bottom:12px;
+      border-bottom:1px solid var(--line);
+      flex-wrap:wrap;
+    }
+    .tabBtn{
+      border:1px solid var(--chipBorder);
+      background:var(--chip);
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:999px;
+      font-weight:700;
+      font-size:13px;
+      cursor:pointer;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    .tabBtn[aria-selected="true"]{
+      background:var(--chipOn);
+      border-color: rgba(140,170,255,.45);
+    }
 
-.tabs{
-  display:flex;gap:8px;margin-bottom:12px;
-  padding-bottom:12px;border-bottom:1px solid var(--line);
-}
-.tabBtn{
-  border:1px solid var(--chipBorder);
-  background:var(--chip);
-  color:var(--text);
-  padding:10px 12px;
-  border-radius:999px;
-  font-weight:700;
-  font-size:13px;
-  cursor:pointer;
-}
-.tabBtn[aria-selected="true"]{
-  background:var(--chipOn);
-  border-color:rgba(140,170,255,.45);
-}
+    .panel{ display:none; }
+    .panel.active{ display:block; }
 
-.panel{ display:none; }
-.panel.active{ display:block; }
+    .field{ display:flex; flex-direction:column; gap:6px; margin-bottom:10px; }
+    label{ font-size:12px; color:var(--muted); }
 
-.field{ display:flex;flex-direction:column;gap:6px;margin-bottom:10px; }
-label{ font-size:12px;color:var(--muted); }
+    .rrpMetaRow{ display:flex; justify-content:space-between; align-items:center; gap:10px; }
+    .rrpRow{ display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap; }
 
-.rrpMetaRow{
-  display:flex;justify-content:space-between;align-items:center;
-}
+    input{
+      padding:12px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(0,0,0,.20);
+      color:var(--text);
+      font-size:16px; /* iOS: prevent zoom */
+      outline:none;
+      width:100%;
+    }
 
-input{
-  padding:12px;
-  border-radius:12px;
-  border:1px solid rgba(255,255,255,.14);
-  background:rgba(0,0,0,.20);
-  color:var(--text);
-  font-size:16px;
-  outline:none;
-  width:100%;
-}
+    .badge{
+      display:inline-flex; align-items:center; gap:6px;
+      padding:6px 10px; border-radius:999px;
+      font-size:12px; font-weight:800;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      user-select:none; white-space:nowrap; flex:0 0 auto;
+    }
+    .badgeDot{ width:8px; height:8px; border-radius:999px; background: rgba(255,255,255,.55); }
+    .badge.auto{ border-color: rgba(140,170,255,.45); background: rgba(140,170,255,.16); }
+    .badge.auto .badgeDot{ background: rgba(140,170,255,.95); }
+    .badge.manual{ border-color: rgba(255,215,0,.45); background: rgba(255,215,0,.14); }
+    .badge.manual .badgeDot{ background: rgba(255,215,0,.95); }
 
-.stepBtns{
-  display:flex;gap:6px;margin-top:6px;
-}
-.stepBtns button{
-  padding:12px 12px;
-  border-radius:10px;
-  border:1px solid var(--chipBorder);
-  background:var(--chip);
-  color:var(--text);
-  font-weight:700;
-  cursor:pointer;
-  min-width:48px;
-}
+    .stepBtns{ display:flex; gap:6px; align-items:flex-end; flex:0 0 auto; }
+    @media (max-width: 520px){
+      .stepBtns{ width:100%; justify-content:space-between; }
+    }
+    .stepBtns button{
+      padding:12px 12px;
+      border-radius:10px;
+      border:1px solid var(--chipBorder);
+      background:var(--chip);
+      color:var(--text);
+      font-size:13px;
+      font-weight:700;
+      cursor:pointer;
+      min-width:48px;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      user-select:none;
+    }
+    .stepBtns button:hover{ background:var(--chipOn); }
 
-.actionBtn{
-  padding:10px 12px;
-  border-radius:12px;
-  border:1px solid var(--chipBorder);
-  background:var(--chip);
-  color:var(--text);
-  font-weight:800;
-  cursor:pointer;
-}
+    .actionsRow{
+      display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;
+    }
+    .actionBtn{
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid var(--chipBorder);
+      background:var(--chip);
+      color:var(--text);
+      font-weight:800;
+      cursor:pointer;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    .actionBtn:hover{ background:var(--chipOn); }
 
-.chipBar{ display:flex;gap:8px;flex-wrap:wrap;margin-top:8px; }
-.chipBtn{
-  padding:8px 10px;border-radius:999px;
-  border:1px solid var(--chipBorder);
-  background:var(--chip);
-  font-size:12px;font-weight:900;
-  cursor:pointer;
-}
-.chipBtn[aria-pressed="true"]{
-  background:var(--chipOn);
-  border-color:rgba(140,170,255,.45);
-}
+    /* Table */
+    .tableHeaderRow{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:10px; margin-bottom:10px; flex-wrap:wrap;
+    }
 
-.tableScroll{
-  overflow:auto;
-  -webkit-overflow-scrolling:touch;
-  max-height:520px;
-  border-radius:12px;
-  position:relative;
-  margin-top:10px;
-}
+    .chipBar{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+    .chipBtn{
+      padding:8px 10px;
+      border-radius:999px;
+      border:1px solid var(--chipBorder);
+      background:var(--chip);
+      color:var(--text);
+      font-size:12px;
+      font-weight:900;
+      cursor:pointer;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      user-select:none;
+    }
+    .chipBtn[aria-pressed="true"]{
+      background:var(--chipOn);
+      border-color: rgba(140,170,255,.45);
+    }
 
-.tableScroll.scrolling thead th{
-  box-shadow:0 6px 12px rgba(0,0,0,.25);
-}
+    /* Scroll container */
+    .tableScroll{
+      overflow:auto;
+      -webkit-overflow-scrolling: touch;
+      max-height: 520px;
+      border-radius:12px;
+      position: relative;
+    }
+    @media (max-width: 520px){
+      .tableScroll{ max-height: 340px; }
+    }
 
-table{
-  width:100%;
-  border-collapse:separate;
-  border-spacing:0;
-  border-radius:12px;
-  overflow:hidden;
-  border:1px solid rgba(255,255,255,.08);
-  background:rgba(0,0,0,.10);
-}
+    /* Shadow appears once you've scrolled (premium "floating header" feel) */
+    .tableScroll.scrolling thead th{
+      box-shadow: 0 6px 12px rgba(0,0,0,.25);
+    }
 
-thead th{
-  position:sticky;
-  top:0;
-  z-index:5;
-  background:#111a38;
-  color:var(--muted);
-  font-size:12px;
-  padding:12px 10px;
-  border-bottom:1px solid rgba(255,255,255,.15);
-}
+    table{
+      width:100%;
+      border-collapse:separate;
+      border-spacing:0;
+      border-radius:12px;
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(0,0,0,.10);
+    }
 
-tbody td{
-  padding:10px;
-  border-bottom:1px solid rgba(255,255,255,.06);
-  font-variant-numeric:tabular-nums;
-}
+    /* Excel-style frozen header */
+    thead th{
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      background: #111a38;
+      color: var(--muted);
+      font-size:12px;
+      font-weight:700;
+      text-align:left;
+      padding:12px 10px;
+      border-bottom:1px solid rgba(255,255,255,.15);
+      white-space:nowrap;
+    }
 
-tbody tr:nth-child(odd){
-  background:rgba(255,255,255,.02);
-}
+    /* Vertical grid lines */
+    thead th:not(:last-child),
+    tbody td:not(:last-child){
+      border-right:1px solid rgba(255,255,255,.06);
+    }
 
-tr.standard{
-  background:rgba(255,215,0,.16)!important;
-}
-tr.standard td:first-child{
-  border-left:4px solid #ffd700;
-}
+    tbody td{
+      padding:10px;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      font-weight:400;
+      transition: background .12s ease;
+    }
 
-tr.tapped{
-  background:rgba(140,170,255,.10)!important;
-}
+    tbody tr:last-child td{ border-bottom:none; }
+    .right{ text-align:right; }
 
-td.gpCol{ font-weight:800; }
+    /* Subtle zebra striping */
+    tbody tr:nth-child(odd){
+      background: rgba(255,255,255,.02);
+    }
 
-.right{ text-align:right; }
+    /* Highlighted row */
+    tr.standard{
+      background: rgba(255, 215, 0, 0.16) !important;
+    }
+    tr.standard td:first-child{
+      border-left: 4px solid #ffd700;
+    }
 
-/* MOBILE IMPROVEMENTS */
-@media (max-width:520px){
-  input{
-    font-size:18px;
-    padding:16px 14px;
-    border-radius:14px;
-  }
-  .stepBtns button{
-    padding:14px 12px;
-    min-width:56px;
-    font-size:14px;
-    border-radius:12px;
-  }
-  .chipBtn{
-    padding:10px 12px;
-    font-size:13px;
-  }
-  .actionBtn{
-    padding:12px 14px;
-    font-size:14px;
-  }
-  label{
-    font-size:13px;
-  }
-}
-</style>
+    /* Pulse animation when the highlighted row changes (subtle) */
+    tr.standard.flash{
+      animation: flashRow 420ms ease-out;
+    }
+    @keyframes flashRow{
+      0%   { filter: brightness(1.25); }
+      100% { filter: brightness(1.0); }
+    }
+
+    td.gpCol{ font-weight:800; }
+
+    .notice{
+      display:none;
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.05);
+      color: var(--text);
+      font-size:12px;
+      line-height:1.35;
+    }
+    .notice.show{ display:block; }
+    .notice.warn{ border-color: var(--warnBorder); background: var(--warnBg); }
+    .notice.bad{ border-color: var(--badBorder); background: var(--badBg); }
+
+    .hint{ font-size:12px; color:var(--muted); margin-top:10px; line-height:1.35; }
+  </style>
 </head>
 <body>
-
-<div class="wrap">
-<div class="titleRow">
-  <div class="brandIcon">
-    <img src="favicon.png">
-  </div>
-  <div>
-    <h1>Margin Calculator</h1>
-    <p class="sub">Cost ex GST · RRP inc GST · GST fixed at 15%</p>
-  </div>
-</div>
-
-<div class="layout">
-
-<div class="card">
-  <div class="tabs">
-    <button class="tabBtn" id="tab-cost" aria-selected="true">Cost → RRP</button>
-    <button class="tabBtn" id="tab-margin">Margin → RRP</button>
-  </div>
-
-  <section class="panel active" id="panel-cost">
-    <div class="field">
-      <label>Cost (ex GST)</label>
-      <input id="cost" type="number" inputmode="decimal">
+<div class="wrap" id="pageWrap">
+  <div class="titleRow">
+    <div class="brandIcon" aria-hidden="true">
+      <img src="favicon.png" alt="">
     </div>
+    <div>
+      <h1>Margin Calculator</h1>
+      <p class="sub">Cost ex GST · RRP inc GST · GST fixed at 15%</p>
+    </div>
+  </div>
 
-    <div class="field">
-      <label>RRP (inc GST)</label>
-      <input id="rrpInc" type="number" inputmode="decimal">
-      <div class="stepBtns">
-        <button data-step="-10">-10</button>
-        <button data-step="-1">-1</button>
-        <button data-step="1">+1</button>
-        <button data-step="10">+10</button>
+  <div class="layout">
+    <!-- MAIN -->
+    <div class="card" id="mainCard">
+      <div class="tabs">
+        <button class="tabBtn" id="tab-cost" aria-selected="true" type="button">Cost → RRP</button>
+        <button class="tabBtn" id="tab-margin" aria-selected="false" type="button">Margin → RRP</button>
       </div>
+
+      <!-- Cost tab -->
+      <section class="panel active" id="panel-cost">
+        <div class="field">
+          <label>Cost (ex GST)</label>
+          <input id="cost" type="number" step="0.01" inputmode="decimal" placeholder="e.g. 100.00">
+        </div>
+
+        <div class="field">
+          <div class="rrpMetaRow">
+            <label>RRP (inc GST)</label>
+            <span class="badge auto" id="rrpModeBadge" title="AUTO updates from Cost. MANUAL stops updates. Clearing RRP leaves it blank.">
+              <span class="badgeDot" aria-hidden="true"></span>
+              <span id="rrpModeText">AUTO</span>
+            </span>
+          </div>
+          <div class="rrpRow">
+            <input id="rrpInc" type="number" step="0.01" inputmode="decimal" placeholder="auto-suggests from cost">
+            <div class="stepBtns" aria-label="RRP step buttons">
+              <button type="button" data-step="-10">-10</button>
+              <button type="button" data-step="-1">-1</button>
+              <button type="button" data-step="1">+1</button>
+              <button type="button" data-step="10">+10</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="actionsRow">
+          <button type="button" class="actionBtn" id="resetBtn">Reset</button>
+        </div>
+
+        <div class="notice" id="validationNotice"></div>
+
+        <div class="hint">
+          iOS tip: keyboard will stay open while typing (no auto-scroll while focused).
+        </div>
+      </section>
+
+      <!-- Margin tab -->
+      <section class="panel" id="panel-margin">
+        <div class="field">
+          <label>Cost (ex GST)</label>
+          <input id="cost2" type="number" step="0.01" inputmode="decimal">
+        </div>
+        <div class="field">
+          <label>Target GP%</label>
+          <input id="targetGp" type="number" step="0.01" inputmode="decimal">
+        </div>
+
+        <table style="margin-top:10px;">
+          <thead>
+            <tr>
+              <th>Required RRP (inc)</th>
+              <th class="right">Required Sell (ex)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td id="reqRrp">$—</td>
+              <td class="right" id="reqSell">$—</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
     </div>
 
-    <div style="margin-top:10px;">
-      <button class="actionBtn" id="resetBtn">Reset</button>
-    </div>
-  </section>
-</div>
+    <!-- TABLE -->
+    <aside class="card" id="tableCard">
+      <div class="tableHeaderRow">
+        <h2 style="margin:0;font-size:16px;">GP% sensitivity</h2>
+        <div style="font-size:12px;color:var(--muted);" id="rangeHint">Range: adaptive</div>
+      </div>
 
-<aside class="card">
-  <h2 style="margin:0;font-size:16px;">GP% sensitivity</h2>
+      <div class="chipBar" aria-label="Increment selector">
+        <button class="chipBtn" type="button" data-inc="auto" aria-pressed="true">Auto</button>
+        <button class="chipBtn" type="button" data-inc="1" aria-pressed="false">1</button>
+        <button class="chipBtn" type="button" data-inc="5" aria-pressed="false">5</button>
+        <button class="chipBtn" type="button" data-inc="10" aria-pressed="false">10</button>
+        <button class="chipBtn" type="button" data-inc="25" aria-pressed="false">25</button>
+        <button class="chipBtn" type="button" data-inc="50" aria-pressed="false">50</button>
+        <button class="chipBtn" type="button" data-inc="100" aria-pressed="false">100</button>
+      </div>
 
-  <div class="chipBar">
-    <button class="chipBtn" data-inc="auto" aria-pressed="true">Auto</button>
-    <button class="chipBtn" data-inc="5">5</button>
-    <button class="chipBtn" data-inc="10">10</button>
-    <button class="chipBtn" data-inc="50">50</button>
+      <div class="tableScroll" id="tableScroll" style="margin-top:10px;">
+        <table>
+          <thead>
+            <tr>
+              <th>RRP (inc)</th>
+              <th class="right">GP ($)</th>
+              <th class="right">GP%</th>
+              <th class="right">Markup%</th>
+            </tr>
+          </thead>
+          <tbody id="gpTableBody"></tbody>
+        </table>
+      </div>
+
+      <div class="hint" id="incHint">Increment: Auto</div>
+    </aside>
   </div>
-
-  <div class="tableScroll" id="tableScroll">
-    <table>
-      <thead>
-        <tr>
-          <th>RRP</th>
-          <th class="right">GP $</th>
-          <th class="right">GP%</th>
-          <th class="right">Markup%</th>
-        </tr>
-      </thead>
-      <tbody id="gpTableBody"></tbody>
-    </table>
-  </div>
-</aside>
-
-</div>
 </div>
 
 <script>
-const GST=1.15;
-const DEFAULT_MULTIPLIER=1.84;
-const $=id=>document.getElementById(id);
-const n=v=>Number.isFinite(+v)?+v:NaN;
-const money=v=>v.toLocaleString("en-NZ",{style:"currency",currency:"NZD"});
-const pct=v=>v.toFixed(2)+"%";
+  const GST = 1.15;
+  const DEFAULT_MULTIPLIER = 1.84;
 
-function calc(cost,rrp){
-  const sell=rrp/GST;
-  const gp=sell-cost;
-  return {gp, gpPct:(gp/sell)*100, muPct:(gp/cost)*100};
-}
+  const $ = id => document.getElementById(id);
+  const n = v => Number.isFinite(+v) ? +v : NaN;
+  const money = v => Number.isFinite(v) ? v.toLocaleString("en-NZ",{style:"currency",currency:"NZD"}) : "$—";
+  const pct = v => Number.isFinite(v) ? v.toFixed(2)+"%" : "—%";
 
-function update(){
-  const cost=n($("cost").value);
-  const rrp=n($("rrpInc").value);
-  const body=$("gpTableBody");
-  body.innerHTML="";
-  if(!cost||!rrp) return;
-
-  for(let d=-100;d<=100;d+=10){
-    const r=rrp+d;
-    if(r<=0) continue;
-    const t=calc(cost,r);
-    body.insertAdjacentHTML("beforeend",`
-      <tr data-key="${r}">
-        <td>${money(r)}</td>
-        <td class="right">${money(t.gp)}</td>
-        <td class="right gpCol">${pct(t.gpPct)}</td>
-        <td class="right">${pct(t.muPct)}</td>
-      </tr>
-    `);
+  function roundToPsych99(v){
+    if(!Number.isFinite(v)) return v;
+    const base = Math.floor(v);
+    const a = base + 0.99;
+    const b = base + 1.99;
+    const candidates = [a, b].filter(x => x >= 0.99);
+    let best = candidates[0];
+    let bestDist = Math.abs(v - best);
+    for(const c of candidates){
+      const d = Math.abs(v - c);
+      if(d < bestDist){ best = c; bestDist = d; }
+    }
+    return Math.round(best * 100) / 100;
   }
-}
 
-$("cost").addEventListener("input",()=>{
-  const cost=n($("cost").value);
-  if(cost){
-    $("rrpInc").value=(cost*DEFAULT_MULTIPLIER).toFixed(2);
+  function calc(costEx, rrpInc){
+    const sellEx = rrpInc / GST;
+    const gp$ = sellEx - costEx;
+    return {
+      sellEx,
+      gp$,
+      gpPct: sellEx ? (gp$ / sellEx) * 100 : NaN,
+      muPct: costEx ? (gp$ / costEx) * 100 : NaN
+    };
   }
-  update();
-});
 
-$("rrpInc").addEventListener("input",update);
+  // Adaptive range based on RRP
+  function adaptiveRange(rrp){
+    if(rrp < 200) return 50;
+    if(rrp < 1000) return 100;
+    if(rrp < 2500) return 250;
+    return 500;
+  }
 
-document.querySelectorAll(".stepBtns button").forEach(btn=>{
-  btn.addEventListener("click",()=>{
-    const step=Number(btn.dataset.step);
-    const r=n($("rrpInc").value)||0;
-    $("rrpInc").value=(r+step).toFixed(2);
-    update();
+  function autoIncrement(rrp){
+    if(rrp < 100) return 5;
+    if(rrp <= 500) return 10;
+    return 50;
+  }
+
+  function buildRrpSeries(center, range, step){
+    const round2 = v => Math.round(v * 100) / 100;
+    const start = center - range;
+    const end   = center + range;
+
+    const startAligned = Math.ceil(start / step) * step;
+    const vals = [];
+    for(let v = startAligned; v <= end + 1e-9; v += step){
+      const r = round2(v);
+      if(r > 0) vals.push(r);
+    }
+
+    const c = round2(center);
+    const hasCenter = vals.some(x => Math.abs(x - c) < 0.005);
+    if(!hasCenter && c > 0) vals.push(c);
+
+    vals.sort((a,b)=>a-b);
+    const uniq = [];
+    for(const v of vals){
+      if(uniq.length === 0 || Math.abs(v - uniq[uniq.length-1]) > 0.005) uniq.push(v);
+    }
+    return uniq;
+  }
+
+  let rrpManuallyEdited = false;
+  let selectedIncrement = null; // null = Auto
+  let lastStandardKey = null;   // for subtle pulse animation
+
+  function setRrpMode(mode){
+    const badge = $("rrpModeBadge");
+    const text = $("rrpModeText");
+    badge.classList.remove("auto","manual");
+    badge.classList.add(mode);
+    text.textContent = mode.toUpperCase();
+  }
+
+  function suggestRrpFromCost(){
+    const cost = n($("cost").value);
+    if(!Number.isFinite(cost) || cost <= 0) return;
+
+    const raw = cost * DEFAULT_MULTIPLIER;
+    const suggested = roundToPsych99(raw);
+    $("rrpInc").value = suggested.toFixed(2);
+    setRrpMode("auto");
+  }
+
+  function updateIncrementUI(){
+    document.querySelectorAll(".chipBtn").forEach(btn=>{
+      const v = btn.dataset.inc;
+      const pressed =
+        (v === "auto" && selectedIncrement === null) ||
+        (v !== "auto" && Number(v) === selectedIncrement);
+      btn.setAttribute("aria-pressed", pressed ? "true" : "false");
+    });
+
+    const label = (selectedIncrement === null) ? "Auto" : String(selectedIncrement);
+    $("incHint").textContent = `Increment: ${label}`;
+  }
+
+  function centerHighlightRow(){
+    const sc = $("tableScroll");
+    const row = sc.querySelector("tr.standard");
+    if(!row) return;
+
+    requestAnimationFrame(() => {
+      const desired = row.offsetTop - (sc.clientHeight / 2) + (row.clientHeight / 2);
+      const max = sc.scrollHeight - sc.clientHeight;
+      sc.scrollTop = Math.max(0, Math.min(max, desired));
+    });
+  }
+
+  function blurActive(){
+    const el = document.activeElement;
+    if(el && el.tagName === "INPUT") el.blur();
+  }
+
+  function isTypingInInput(){
+    const el = document.activeElement;
+    return el && el.tagName === "INPUT";
+  }
+
+  function validateInputs(cost, rrp){
+    const notice = $("validationNotice");
+    notice.className = "notice";
+    notice.textContent = "";
+
+    if(!Number.isFinite(cost) && !Number.isFinite(rrp)) return;
+
+    if(Number.isFinite(cost) && cost < 0){
+      notice.classList.add("show","bad");
+      notice.textContent = "Cost can’t be negative.";
+      return;
+    }
+    if(Number.isFinite(rrp) && rrp < 0){
+      notice.classList.add("show","bad");
+      notice.textContent = "RRP can’t be negative.";
+      return;
+    }
+    if(Number.isFinite(cost) && Number.isFinite(rrp) && rrp > 0){
+      const t = calc(cost, rrp);
+      if(t.gp$ < 0){
+        notice.classList.add("show","bad");
+        notice.textContent = "Negative GP at this price (sell ex GST is below cost).";
+        return;
+      }
+      if(t.gpPct < 10){
+        notice.classList.add("show","warn");
+        notice.textContent = "Low margin warning: GP% is under 10% at this price.";
+        return;
+      }
+    }
+  }
+
+  function updateTableHeaderShadow(){
+    const sc = $("tableScroll");
+    if(sc.scrollTop > 0) sc.classList.add("scrolling");
+    else sc.classList.remove("scrolling");
+  }
+
+  // center=true will center ONLY when no input is focused (fixes iOS keyboard dismissal)
+  function updateCost({center=true} = {}){
+    const cost = n($("cost").value);
+    const rrp  = n($("rrpInc").value);
+    const body = $("gpTableBody");
+
+    validateInputs(cost, rrp);
+
+    if(!Number.isFinite(cost) || !Number.isFinite(rrp) || rrp <= 0){
+      body.innerHTML = "";
+      return;
+    }
+
+    const range = adaptiveRange(rrp);
+    $("rangeHint").textContent = `Range: ±$${range} (adaptive)`;
+
+    const step = selectedIncrement ?? autoIncrement(rrp);
+    const rrps = buildRrpSeries(rrp, range, step);
+
+    body.innerHTML = "";
+
+    let standardRowKey = null;
+
+    for(const r of rrps){
+      const t = calc(cost, r);
+      const isStandard = Math.abs(r - rrp) < 0.005;
+      if(isStandard) standardRowKey = r.toFixed(2);
+
+      body.insertAdjacentHTML("beforeend",`
+        <tr class="${isStandard ? "standard" : ""}" data-key="${r.toFixed(2)}">
+          <td>${money(r)}</td>
+          <td class="right">${money(t.gp$)}</td>
+          <td class="right gpCol">${pct(t.gpPct)}</td>
+          <td class="right">${pct(t.muPct)}</td>
+        </tr>
+      `);
+    }
+
+    // Subtle animation when standard row changes (non-annoying)
+    if(standardRowKey && standardRowKey !== lastStandardKey){
+      lastStandardKey = standardRowKey;
+      const row = body.querySelector(`tr.standard[data-key="${CSS.escape(standardRowKey)}"]`);
+      if(row){
+        row.classList.add("flash");
+        setTimeout(()=>row.classList.remove("flash"), 480);
+      }
+    }
+
+    // IMPORTANT: iOS can drop the keyboard if we programmatically scroll while an input is focused
+    if(center && !isTypingInInput()) centerHighlightRow();
+  }
+
+  function updateMargin(){
+    const cost = n($("cost2").value);
+    const gp   = n($("targetGp").value) / 100;
+
+    if(!Number.isFinite(cost) || !Number.isFinite(gp) || gp >= 1){
+      $("reqSell").textContent = "$—";
+      $("reqRrp").textContent = "$—";
+      return;
+    }
+
+    const sellEx = cost / (1 - gp);
+    $("reqSell").textContent = money(sellEx);
+    $("reqRrp").textContent = money(sellEx * GST);
+  }
+
+  function showTab(which){
+    const isCost = which === "cost";
+    $("panel-cost").classList.toggle("active", isCost);
+    $("panel-margin").classList.toggle("active", !isCost);
+    $("tableCard").style.display = isCost ? "block" : "none";
+
+    $("tab-cost").setAttribute("aria-selected", isCost ? "true" : "false");
+    $("tab-margin").setAttribute("aria-selected", isCost ? "false" : "true");
+  }
+
+  // ===== Premium table behaviour =====
+  $("tableScroll").addEventListener("scroll", updateTableHeaderShadow, {passive:true});
+
+  // ===== Super-clean / invisible keyboard flow (safe on iOS) =====
+  // Blur when user touches the table area (intentional)
+  $("tableScroll").addEventListener("touchstart", blurActive, {passive:true});
+
+  // Tapping outside inputs blurs
+  document.addEventListener("pointerdown", (e)=>{
+    const el = document.activeElement;
+    const isInputFocused = el && el.tagName === "INPUT";
+    if(!isInputFocused) return;
+
+    const tappedInput = e.target.closest("input");
+    if(!tappedInput) blurActive();
+  }, {passive:true});
+
+  // Enter in cost -> suggest in AUTO, focus RRP
+  $("cost").addEventListener("keydown", e => {
+    if(e.key === "Enter"){
+      e.preventDefault();
+      if(!rrpManuallyEdited) suggestRrpFromCost();
+      updateCost({center:true});
+      $("rrpInc").focus();
+      $("rrpInc").select();
+    }
   });
-});
 
-$("gpTableBody").addEventListener("pointerdown",e=>{
-  const row=e.target.closest("tr");
-  if(!row) return;
-  document.querySelectorAll("#gpTableBody tr").forEach(r=>r.classList.remove("tapped"));
-  row.classList.add("tapped");
-});
+  // Cost typing: NO centering (prevents iOS keyboard dismissal)
+  $("cost").addEventListener("input", () => {
+    if(!rrpManuallyEdited) suggestRrpFromCost();
+    updateCost({center:false});
+  });
 
-$("tableScroll").addEventListener("scroll",()=>{
-  if($("tableScroll").scrollTop>0)
-    $("tableScroll").classList.add("scrolling");
-  else
+  // RRP typing: NO centering (prevents iOS keyboard dismissal)
+  $("rrpInc").addEventListener("input", () => {
+    const val = $("rrpInc").value.trim();
+    if(val !== ""){
+      rrpManuallyEdited = true;
+      setRrpMode("manual");
+      updateCost({center:false});
+      return;
+    }
+    rrpManuallyEdited = false;
+    setRrpMode("auto");
+    $("gpTableBody").innerHTML = "";
+    validateInputs(n($("cost").value), NaN);
+  });
+
+  // Enter in RRP -> blur and scroll table into view
+  $("rrpInc").addEventListener("keydown", e => {
+    if(e.key === "Enter"){
+      e.preventDefault();
+      blurActive();
+      $("tableCard").scrollIntoView({behavior:"smooth", block:"start"});
+      updateCost({center:true});
+    }
+  });
+
+  // Step buttons (snappy + no keyboard pop)
+  document.querySelectorAll(".stepBtns button").forEach(btn=>{
+    btn.addEventListener("pointerdown", (e)=>{
+      e.preventDefault();
+      blurActive();
+      const step = Number(btn.dataset.step);
+      const rrp = n($("rrpInc").value) || 0;
+      const next = rrp + step;
+      $("rrpInc").value = (Math.round(next * 100) / 100).toFixed(2);
+      rrpManuallyEdited = true;
+      setRrpMode("manual");
+      updateCost({center:true});
+    });
+  });
+
+  // Increment selector
+  document.querySelectorAll(".chipBtn").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const v = btn.dataset.inc;
+      selectedIncrement = (v === "auto") ? null : Number(v);
+      updateIncrementUI();
+      updateCost({center:true});
+    });
+  });
+
+  // Reset
+  $("resetBtn").addEventListener("click", () => {
+    blurActive();
+
+    $("cost").value = "";
+    $("rrpInc").value = "";
+    $("gpTableBody").innerHTML = "";
+    rrpManuallyEdited = false;
+    setRrpMode("auto");
+
+    selectedIncrement = null;
+    updateIncrementUI();
+
+    $("cost2").value = "";
+    $("targetGp").value = "";
+    $("reqSell").textContent = "$—";
+    $("reqRrp").textContent = "$—";
+
+    $("validationNotice").className = "notice";
+    $("validationNotice").textContent = "";
+    $("rangeHint").textContent = "Range: adaptive";
+
     $("tableScroll").classList.remove("scrolling");
-});
-</script>
+    lastStandardKey = null;
 
+    showTab("cost");
+    $("cost").focus();
+  });
+
+  // Tabs
+  $("tab-cost").onclick = () => showTab("cost");
+  $("tab-margin").onclick = () => showTab("margin");
+
+  // Margin tab events
+  $("cost2").oninput = $("targetGp").oninput = updateMargin;
+
+  // Init
+  showTab("cost");
+  setRrpMode("auto");
+  updateIncrementUI();
+  updateTableHeaderShadow();
+  $("cost").focus();
+</script>
 </body>
 </html>
